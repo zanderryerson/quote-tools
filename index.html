@@ -8,6 +8,7 @@
 :root{--navy:#0D1B2A;--ink:#1B263B;--forest:#2D6A4F;--teal:#0F7C78;--growth:#74B82A;
 --carbon:#15202B;--slate:#52606D;--steel:#8A969F;--mist:#E9F1EE;--cloud:#F6F8F7;--risk:#B23A48;--amber:#C88719;}
 *{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--carbon);background:var(--cloud);line-height:1.5}
 header{background:var(--navy);color:#fff;padding:22px 32px;display:flex;align-items:center;gap:18px}
 header .wm{font-weight:700;letter-spacing:5px;font-size:20px}
@@ -25,7 +26,7 @@ box-shadow:0 3px 12px rgba(13,27,42,.06)}
 .num{background:var(--forest);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;
 align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:0 0 22px}
 label{display:block;font-size:11px;font-weight:700;color:var(--forest);letter-spacing:1.1px;margin:14px 0 5px}
-input[type=text],input[type=email],input[type=date],textarea{width:100%;padding:9px 11px;border:1px solid #cfd8d5;
+input[type=text],input[type=email],input[type=date],textarea{display:block;width:100%;min-width:0;max-width:100%;padding:9px 11px;border:1px solid #cfd8d5;
 border-radius:4px;font-family:inherit;font-size:14px;color:var(--carbon)}
 textarea{min-height:74px;resize:vertical}
 input:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:-1px;border-color:var(--teal)}
@@ -33,6 +34,9 @@ input:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:-1px;bor
 .drop:hover,.drop.over{border-color:var(--teal);background:#eef5f3}
 .drop span{color:var(--slate);font-size:12.5px;display:block;margin-top:10px}
 .dropalt{color:var(--slate);font-size:13px;margin-top:12px}
+.wrap,.card,.drop,.flag,#parseMsg,#lineWrap,details,.grid2,.grid2>*{min-width:0;max-width:100%}
+.drop span,.dropalt,.flag,.flag strong,#genMsg,#genMsg strong,.filename,details,summary,pre,
+#lineWrap .phase-cell,#lineWrap .note{overflow-wrap:anywhere;word-break:break-word}
 .btn{background:var(--forest);color:#fff;border:0;border-radius:4px;font-family:inherit;font-weight:700;
 cursor:pointer;letter-spacing:.3px;display:inline-block;text-align:center}
 .btn:hover{background:#255a42}
@@ -80,6 +84,8 @@ padding:3px 9px;border-radius:11px;letter-spacing:.5px}
   #lineWrap .phase-cell{grid-column:1/-1;display:block;text-align:left;padding-bottom:6px}
   #lineWrap .duration-cell,#lineWrap .sales-cost-cell,#lineWrap .investment-cell{
     grid-column:1/-1;display:flex;justify-content:space-between;gap:14px;text-align:right;white-space:normal}
+  #lineWrap td[data-label] .cell-value{margin-left:auto;display:inline-flex;align-items:center;
+    justify-content:flex-end;gap:8px;flex-wrap:wrap;min-width:0}
   #lineWrap td[data-label]::before{content:attr(data-label);color:var(--slate);font-size:10px;
     font-weight:700;letter-spacing:.7px;text-transform:uppercase;text-align:left}
   #lineWrap .saving-row .phase-cell,#lineWrap .total .phase-cell{grid-column:1;padding:3px 0}
@@ -88,7 +94,7 @@ padding:3px 9px;border-radius:11px;letter-spacing:.5px}
   #lineWrap .saving-row td:empty,#lineWrap .total td:empty{display:none}
   #lineWrap tr.total{margin-top:4px;padding:10px;background:var(--mist);border-top:2px solid var(--navy)}
   #lineWrap tr.total td{background:transparent;border:0}
-  .pill{display:inline-block;margin-top:4px}
+  .pill{display:inline-block;margin-top:0}
   h2{font-size:15px}
 }
 footer{border-top:1px solid #e3e9e7;margin-top:30px;padding-top:12px;font-size:11px;color:var(--slate);
@@ -439,7 +445,7 @@ function parse(rows,name){
   $("preparer").value=meta.preparer||"Alexander Ryerson";
   $("ref").value="RY-"+issued.replace(/-/g,"")+"-"+Math.random().toString(36).slice(2,6).toUpperCase();
   renderLines(); runChecks(); autofill();
-  $("parseMsg").innerHTML='<div class="flag ok">Read <strong>'+lines.length+'</strong> phases from <strong>'+esc(name)+'</strong>.</div>';
+  $("parseMsg").innerHTML='<div class="flag ok">Read <strong>'+lines.length+'</strong> phases from <strong class="filename">'+esc(name)+'</strong>.</div>';
   $("stage2").classList.remove("hide");
   $("stage2").scrollIntoView({behavior:"smooth"});
 }
@@ -454,9 +460,10 @@ function renderLines(){
   DATA.lines.forEach(l=>{
     const w=Number(l.list||0)>Number(l.amount||0);
     h+='<tr><td class="phase-cell"><strong>'+esc(l.phase)+'</strong><div class="note">'+esc(l.delivers||"")+'</div></td>'
-     +'<td class="duration-cell" data-label="Duration">'+esc(l.duration||"")+'</td>'
-     +(D?'<td class="money-cell sales-cost-cell" data-label="Sales cost">'+money(l.list)+'</td>':'')
-     +'<td class="money-cell investment-cell" data-label="Investment">'+money(l.amount)+(w&&Number(l.amount)===0?'<br><span class="pill">waived</span>':'')+'</td></tr>';});
+     +'<td class="duration-cell" data-label="Duration"><span class="cell-value">'+esc(l.duration||"")+'</span></td>'
+     +(D?'<td class="money-cell sales-cost-cell" data-label="Sales cost"><span class="cell-value">'+money(l.list)+'</span></td>':'')
+     +'<td class="money-cell investment-cell" data-label="Investment"><span class="cell-value"><span>'+money(l.amount)+'</span>'
+     +(w&&Number(l.amount)===0?'<span class="pill">waived</span>':'')+'</span></td></tr>';});
   const sav=DATA.lines.reduce((a,l)=>a+Math.max(0,Number(l.list||0)-Number(l.amount||0)),0);
   if(D) h+='<tr class="saving-row"><td class="phase-cell">Total saving</td><td></td><td></td><td class="money-cell investment-cell" style="color:var(--forest);font-weight:700">'+money(sav)+'</td></tr>';
   h+='<tr class="total"><td class="phase-cell">Total investment</td><td></td>'+(D?'<td></td>':'')+'<td class="money-cell investment-cell">'+money(DATA.total)+'</td></tr></table>';
@@ -565,7 +572,7 @@ $("pdf").onclick=()=>{
   log("PDF requested");
   const w=window.open("","_blank");
   if(!w){$("genMsg").innerHTML='<span style="color:var(--risk)">Your browser blocked the new window. Allow pop-ups and try again.</span>';return;}
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ryerson quote '
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ryerson quote '
     +esc(p.client)+'</title>'+QSTYLE+'</head><body>'+quoteBody(p)
     +'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print()},350)}<\/scr'+'ipt></body></html>');
   w.document.close();
@@ -577,7 +584,7 @@ $("preview").onclick=()=>{
   const p=buildPayload();
   const w=window.open("","_blank");
   if(!w){$("genMsg").innerHTML='<span style="color:var(--risk)">Your browser blocked the preview. Allow pop-ups and try again.</span>';return;}
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preview</title>'+QSTYLE+'</head><body>'+quoteBody(p)+'</body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preview</title>'+QSTYLE+'</head><body>'+quoteBody(p)+'</body></html>');
   w.document.close();
 };
 
@@ -603,18 +610,22 @@ async function dl(txt,name){
 
 const QSTYLE=`<style>
 :root{--navy:#0D1B2A;--forest:#2D6A4F;--slate:#52606D;--steel:#8A969F;--mist:#E9F1EE;--carbon:#15202B}
+*{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--carbon);background:#fff;line-height:1.55}
 .q{max-width:800px;margin:0 auto;padding:34px 40px}
 .qhead{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:2px solid var(--navy)}
-.qhead img{width:44px}
+.qhead>*, .meta>div{min-width:0}
+.qhead img{width:44px;flex:0 0 44px}
 .qwm{font-weight:700;letter-spacing:4.5px;color:var(--navy);font-size:17px}
 .qds{color:var(--forest);font-size:8.5px;letter-spacing:2.2px;font-weight:700;margin-top:2px}
-.qref{margin-left:auto;font-size:10.5px;color:var(--steel);letter-spacing:1.2px}
+.qref{margin-left:auto;flex:0 1 38%;text-align:right;font-size:10.5px;color:var(--steel);letter-spacing:1.2px}
 h1{font-size:24px;color:var(--navy);margin:22px 0 16px}
 .meta{display:flex;gap:34px;flex-wrap:wrap;margin-bottom:18px}
 .meta span{display:block;font-size:9.5px;letter-spacing:1.3px;color:var(--slate);font-weight:700}
 .meta strong{color:var(--navy);font-size:14px}
 .cover{background:var(--mist);padding:13px 16px;border-radius:4px;font-size:13.5px;margin-bottom:18px}
+.qref,.meta strong,.cover,.ph,.dl,li{overflow-wrap:anywhere;word-break:break-word}
 table{width:100%;border-collapse:collapse}
 .pricing-table{table-layout:fixed}
 .pricing-table.has-sales th:first-child{width:50%}
@@ -626,17 +637,34 @@ td{padding:11px 10px;border-bottom:1px solid #eef2f1;vertical-align:top;font-siz
 .dl{color:var(--slate);font-size:12px;margin-top:3px}
 .du{white-space:nowrap;color:var(--slate)}
 .am{text-align:right;white-space:nowrap}
-.sales-cost{color:var(--slate)}
+.sales-cost{color:var(--slate);text-decoration:none!important}
 tfoot td{font-weight:700;color:var(--navy);font-size:15px;border-top:2px solid var(--navy);background:var(--mist)}
 h2{font-size:11.5px;letter-spacing:1.4px;color:var(--forest);margin:26px 0 8px}
 ul{margin:0;padding-left:18px} li{font-size:12.5px;margin-bottom:6px}
 .exp{font-size:12.5px;color:var(--slate);margin-top:16px;font-style:italic}
 .qfoot{margin-top:30px;padding-top:11px;border-top:1px solid #e3e9e7;font-size:10px;letter-spacing:1.4px;color:var(--slate);text-align:center}
 @media(max-width:600px){
-  .q{padding:24px 16px}.qhead{gap:9px}.qhead img{width:38px}.qwm{font-size:15px}.qref{font-size:8.5px}
+  .q{padding:24px 16px}.qhead{gap:9px}.qhead img{width:38px;flex-basis:38px}.qwm{font-size:15px}.qref{font-size:8.5px}
   h1{font-size:21px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
-  th{padding:7px 4px;font-size:8px;letter-spacing:.45px}td{padding:9px 4px;font-size:11px}
-  .dl{font-size:10.5px}.du{white-space:normal}.am{font-size:10.5px}
+  .pricing-table,.pricing-table tbody,.pricing-table tfoot{display:block;width:100%}
+  .pricing-table thead{display:none}
+  .pricing-table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;
+    padding:14px 0;border-bottom:1px solid #eef2f1}
+  .pricing-table tbody td{border:0;padding:0;min-width:0;font-size:12px}
+  .pricing-table tbody td:first-child{grid-column:1/-1;overflow-wrap:anywhere}
+  .pricing-table tbody td[data-label]{grid-column:1/-1;display:flex;justify-content:space-between;
+    gap:12px;text-align:right;white-space:normal}
+  .pricing-table tbody td[data-label]::before{content:attr(data-label);color:var(--slate);font-size:9px;
+    font-weight:700;letter-spacing:.8px;text-transform:uppercase;text-align:left}
+  .pricing-table tfoot tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;
+    padding:10px;background:var(--mist);border-top:2px solid var(--navy)}
+  .pricing-table tfoot td{display:none;border:0;background:transparent;padding:0;min-width:0}
+  .pricing-table tfoot td:first-child{display:block;grid-column:1;font-size:13px}
+  .pricing-table tfoot td:last-child{display:block;grid-column:2;font-size:13px;text-align:right;white-space:nowrap}
+  .dl{font-size:11px}.du{white-space:normal}.am{font-size:12px}
+}
+@media(max-width:380px){
+  .qhead{flex-wrap:wrap}.qref{margin-left:0;flex-basis:100%;text-align:left}.meta{grid-template-columns:1fr}
 }
 @page{margin:14mm}
 </style>`;
@@ -644,7 +672,10 @@ ul{margin:0;padding-left:18px} li{font-size:12.5px;margin-bottom:6px}
 /* ---------- quote body, shared by preview and output ---------- */
 function quoteBody(p){
   const D=p.lines.some(l=>Number(l.list||0)>Number(l.amount||0));
-  let rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td><td class="du">'+esc(l.duration||"")+'</td>'+(D?'<td class="am sales-cost">'+money(l.list)+'</td>':'')+'<td class="am">'+money(l.amount)+'</td></tr>').join("");
+  let rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td>'
+    +'<td class="du" data-label="Duration">'+esc(l.duration||"")+'</td>'
+    +(D?'<td class="am sales-cost" data-label="Sales cost">'+money(l.list)+'</td>':'')
+    +'<td class="am" data-label="Investment">'+money(l.amount)+'</td></tr>').join("");
   return `
 <div class="q">
   <div class="qhead">
@@ -678,29 +709,33 @@ function outputHTML(blocks,note,client,ref){
 :root{--navy:#0D1B2A;--forest:#2D6A4F;--teal:#0F7C78;--growth:#74B82A;--carbon:#15202B;
 --slate:#52606D;--steel:#8A969F;--mist:#E9F1EE;--cloud:#F6F8F7;--risk:#B23A48;}
 *{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--carbon);background:var(--cloud);line-height:1.55}
-.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--navy)}
-.gbox{background:#fff;max-width:440px;width:100%;border-radius:8px;padding:34px;box-shadow:0 14px 40px rgba(0,0,0,.3)}
+.gate{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--navy)}
+.gbox{background:#fff;max-width:440px;width:100%;min-width:0;border-radius:8px;padding:34px;box-shadow:0 14px 40px rgba(0,0,0,.3)}
 .gbox img{width:64px;display:block;margin-bottom:14px}
 .gwm{font-weight:700;letter-spacing:5px;color:var(--navy);font-size:19px}
 .gds{color:var(--forest);font-size:9.5px;letter-spacing:2.4px;font-weight:700;margin:3px 0 20px}
 .gbox h1{font-size:17px;color:var(--navy);margin:0 0 6px}
 .gbox p{font-size:13px;color:var(--slate);margin:0 0 16px}
-.gbox input{width:100%;padding:11px;border:1px solid #cfd8d5;border-radius:4px;font-size:14px;font-family:inherit}
+.gwm,.gds,.gbox h1,.gbox p,.err{overflow-wrap:anywhere;word-break:break-word}
+.gbox input{display:block;width:100%;min-width:0;padding:11px;border:1px solid #cfd8d5;border-radius:4px;font-size:16px;font-family:inherit}
 .gbox button{width:100%;margin-top:11px;background:var(--forest);color:#fff;border:0;padding:12px;
 border-radius:4px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
 .err{color:var(--risk);font-size:12.5px;margin-top:10px;display:none}
 .q{max-width:820px;margin:0 auto;background:#fff;padding:44px 52px 32px;min-height:100vh}
 .qhead{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:2px solid var(--navy)}
-.qhead img{width:46px}
+.qhead>*,.meta>div{min-width:0}
+.qhead img{width:46px;flex:0 0 46px}
 .qwm{font-weight:700;letter-spacing:4.5px;color:var(--navy);font-size:17px}
 .qds{color:var(--forest);font-size:8.5px;letter-spacing:2.2px;font-weight:700;margin-top:2px}
-.qref{margin-left:auto;font-size:10.5px;color:var(--steel);letter-spacing:1.2px}
+.qref{margin-left:auto;flex:0 1 38%;text-align:right;font-size:10.5px;color:var(--steel);letter-spacing:1.2px}
 h1{font-size:25px;color:var(--navy);margin:26px 0 18px}
 .meta{display:flex;gap:38px;flex-wrap:wrap;margin-bottom:22px}
 .meta span{display:block;font-size:9.5px;letter-spacing:1.3px;color:var(--slate);font-weight:700}
 .meta strong{color:var(--navy);font-size:14px}
 .cover{background:var(--mist);padding:14px 17px;border-radius:4px;font-size:13.5px;margin-bottom:22px}
+.qref,.meta strong,.cover,.ph,.dl,li{overflow-wrap:anywhere;word-break:break-word}
 table{width:100%;border-collapse:collapse;margin-top:6px}
 .pricing-table{table-layout:fixed}
 .pricing-table.has-sales th:first-child{width:50%}
@@ -712,7 +747,7 @@ td{padding:12px 11px;border-bottom:1px solid #eef2f1;vertical-align:top;font-siz
 .dl{color:var(--slate);font-size:12.5px;margin-top:3px}
 .du{white-space:nowrap;color:var(--slate)}
 .am{text-align:right;white-space:nowrap}
-.sales-cost{color:var(--slate)}
+.sales-cost{color:var(--slate);text-decoration:none!important}
 tfoot td{font-weight:700;color:var(--navy);font-size:15px;border-top:2px solid var(--navy);
 border-bottom:0;background:var(--mist)}
 h2{font-size:12px;letter-spacing:1.4px;color:var(--forest);margin:30px 0 8px}
@@ -722,10 +757,28 @@ li{font-size:12.5px;color:var(--carbon);margin-bottom:6px}
 .qfoot{margin-top:34px;padding-top:12px;border-top:1px solid #e3e9e7;font-size:10px;
 letter-spacing:1.4px;color:var(--slate);text-align:center}
 @media(max-width:600px){
-  .q{padding:24px 16px}.qhead{gap:9px}.qhead img{width:38px}.qwm{font-size:15px}.qref{font-size:8.5px}
+  .gate{padding:16px}.gbox{padding:24px 20px}
+  .q{padding:24px 16px}.qhead{gap:9px}.qhead img{width:38px;flex-basis:38px}.qwm{font-size:15px}.qref{font-size:8.5px}
   h1{font-size:21px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
-  th{padding:7px 4px;font-size:8px;letter-spacing:.45px}td{padding:9px 4px;font-size:11px}
-  .dl{font-size:10.5px}.du{white-space:normal}.am{font-size:10.5px}
+  .pricing-table,.pricing-table tbody,.pricing-table tfoot{display:block;width:100%}
+  .pricing-table thead{display:none}
+  .pricing-table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;
+    padding:14px 0;border-bottom:1px solid #eef2f1}
+  .pricing-table tbody td{border:0;padding:0;min-width:0;font-size:12px}
+  .pricing-table tbody td:first-child{grid-column:1/-1;overflow-wrap:anywhere}
+  .pricing-table tbody td[data-label]{grid-column:1/-1;display:flex;justify-content:space-between;
+    gap:12px;text-align:right;white-space:normal}
+  .pricing-table tbody td[data-label]::before{content:attr(data-label);color:var(--slate);font-size:9px;
+    font-weight:700;letter-spacing:.8px;text-transform:uppercase;text-align:left}
+  .pricing-table tfoot tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;
+    padding:10px;background:var(--mist);border-top:2px solid var(--navy)}
+  .pricing-table tfoot td{display:none;border:0;background:transparent;padding:0;min-width:0}
+  .pricing-table tfoot td:first-child{display:block;grid-column:1;font-size:13px}
+  .pricing-table tfoot td:last-child{display:block;grid-column:2;font-size:13px;text-align:right;white-space:nowrap}
+  .dl{font-size:11px}.du{white-space:normal}.am{font-size:12px}
+}
+@media(max-width:380px){
+  .qhead{flex-wrap:wrap}.qref{margin-left:0;flex-basis:100%;text-align:left}.meta{grid-template-columns:1fr}
 }
 @media print{.gate{display:none}body{background:#fff}.q{padding:0}}
 </style></head>
@@ -783,7 +836,10 @@ async function tryOpen(){
 }
 function render(p){
   const D=p.lines.some(l=>Number(l.list||0)>Number(l.amount||0));
-  const rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td><td class="du">'+esc(l.duration||"")+'</td>'+(D?'<td class="am sales-cost">'+money(l.list)+'</td>':'')+'<td class="am">'+money(l.amount)+'</td></tr>').join("");
+  const rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td>'
+    +'<td class="du" data-label="Duration">'+esc(l.duration||"")+'</td>'
+    +(D?'<td class="am sales-cost" data-label="Sales cost">'+money(l.list)+'</td>':'')
+    +'<td class="am" data-label="Investment">'+money(l.amount)+'</td></tr>').join("");
   return '<div class="q"><div class="qhead"><img src="data:image/png;base64,${EMBLEM}" alt="">'
    +'<div><div class="qwm">RYERSON</div><div class="qds">AI OPERATIONS &amp; ECONOMICS</div></div>'
    +'<div class="qref">'+esc(p.ref)+'</div></div>'
