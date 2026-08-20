@@ -70,8 +70,11 @@ padding:3px 9px;border-radius:11px;letter-spacing:.5px}
   button{width:100%;padding:15px;font-size:15px}
   button.ghost{margin-left:0 !important;margin-top:10px}
   input[type=text],input[type=email],input[type=date],textarea{font-size:16px;padding:12px}
-  table{font-size:12px}
-  td,th{padding:7px 6px}
+  table{font-size:12px;table-layout:fixed;width:100%}
+  td,th{padding:7px 5px;word-break:break-word}
+  #lineWrap th:nth-child(2),#lineWrap td:nth-child(2){display:none}   /* hide Duration on phones */
+  .pill{display:inline-block;margin-top:4px}
+  td.num,th.num{font-variant-numeric:tabular-nums}
   h2{font-size:15px}
 }
 footer{border-top:1px solid #e3e9e7;margin-top:30px;padding-top:12px;font-size:11px;color:var(--slate);
@@ -153,7 +156,7 @@ JavaScript is switched off. This tool cannot run without it.</div></noscript>
   </div>
 
   <h2>3. Who may open it</h2>
-  <p class="sub">The recipient enters this address to unlock the file. Case and surrounding spaces are ignored.</p>
+  <p class="sub">The recipient enters this address to unlock the file. Case and surrounding spaces are ignored. The two message fields are filled in for you and can be edited or cleared.</p>
   <div class="card">
     <div class="grid2">
       <div>
@@ -170,11 +173,11 @@ JavaScript is switched off. This tool cannot run without it.</div></noscript>
       </div>
       <div>
         <label>MESSAGE ON THE UNLOCK SCREEN, OPTIONAL</label>
-        <input type="text" id="gateNote" placeholder="Prepared for the CWM leadership team">
+        <input type="text" id="gateNote" placeholder="Shown before the recipient enters their email">
       </div>
     </div>
     <label>COVERING NOTE INSIDE THE QUOTE, OPTIONAL</label>
-    <textarea id="cover" placeholder="One short paragraph. Leave blank to omit."></textarea>
+    <textarea id="cover" placeholder="Appears above the phases. Clear it to omit."></textarea>
   </div>
 
   <h2>4. Generate</h2>
@@ -421,7 +424,7 @@ function parse(rows,name){
   $("qdate").value=fmtDate(meta.date)||new Date().toISOString().slice(0,10);
   $("preparer").value=meta.preparer||"Alexander Ryerson";
   $("ref").value="RY-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+Math.random().toString(36).slice(2,6).toUpperCase();
-  renderLines(); runChecks();
+  renderLines(); runChecks(); autofill();
   $("parseMsg").innerHTML='<div class="flag ok">Read <strong>'+lines.length+'</strong> phases from <strong>'+esc(name)+'</strong>.</div>';
   $("stage2").classList.remove("hide");
   $("stage2").scrollIntoView({behavior:"smooth"});
@@ -430,18 +433,39 @@ function parse(rows,name){
 function hasDisc(){ return DATA.lines.some(l=>Number(l.list||0)>Number(l.amount||0)); }
 function renderLines(){
   const D=hasDisc();
-  let h='<label style="margin-top:20px">PHASES READ FROM THE WORKBOOK</label><table><tr><th>Phase</th><th>Duration</th>'
+  const cols = D ? '<colgroup><col style="width:46%"><col style="width:14%"><col style="width:20%"><col style="width:20%"></colgroup>'
+                 : '<colgroup><col style="width:58%"><col style="width:18%"><col style="width:24%"></colgroup>';
+  let h='<label style="margin-top:20px">PHASES READ FROM THE WORKBOOK</label><table>'+cols+'<tr><th>Phase</th><th>Duration</th>'
     +(D?'<th class="num">Sales cost</th>':'')+'<th class="num">Investment</th></tr>';
   DATA.lines.forEach(l=>{
     const w=Number(l.list||0)>Number(l.amount||0);
     h+='<tr><td><strong>'+esc(l.phase)+'</strong><div class="note">'+esc(l.delivers||"")+'</div></td><td>'+esc(l.duration||"")+'</td>'
      +(D?'<td class="num">'+money(l.list)+'</td>':'')
-     +'<td class="num">'+money(l.amount)+(w&&Number(l.amount)===0?' <span class="pill">waived</span>':'')+'</td></tr>';});
+     +'<td class="num">'+money(l.amount)+(w&&Number(l.amount)===0?'<br><span class="pill">waived</span>':'')+'</td></tr>';});
   const sav=DATA.lines.reduce((a,l)=>a+Math.max(0,Number(l.list||0)-Number(l.amount||0)),0);
   if(D) h+='<tr><td>Total saving</td><td></td><td></td><td class="num" style="color:var(--forest);font-weight:700">'+money(sav)+'</td></tr>';
   h+='<tr class="total"><td>Total investment</td><td></td>'+(D?'<td></td>':'')+'<td class="num">'+money(DATA.total)+'</td></tr></table>';
   $("lineWrap").innerHTML=h;
 }
+
+function autofill(){
+  const c=(DATA.meta.client||"").toString().trim();
+  const named = c && !/illustrative|replace|client name|example/i.test(c);
+  const who = named ? c : "your leadership team";
+  const gn=$("gateNote"), cv=$("cover");
+  const gauto="Prepared for "+who+".";
+  const sav=DATA.lines.reduce((a,l)=>a+Math.max(0,Number(l.list||0)-Number(l.amount||0)),0);
+  const phases=DATA.lines.length;
+  let cauto="This proposal sets out "+phases+" phase"+(phases===1?"":"s")+" of work for "+who+
+    ". Each phase stands alone and earns the next, so you can stop at any boundary.";
+  if(sav>0) cauto+=" It includes "+money(sav)+" of waived or reduced fees.";
+  if(!gn.dataset.touched) gn.value=gauto;
+  if(!cv.dataset.touched) cv.value=cauto;
+}
+["gateNote","cover"].forEach(id=>{
+  const el=$(id);
+  el.addEventListener("input",()=>{ el.dataset.touched="1"; });
+});
 
 function runChecks(){
   const out=[];const sum=DATA.lines.reduce((a,l)=>a+Number(l.amount||0),0);
