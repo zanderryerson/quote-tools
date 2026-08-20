@@ -46,9 +46,8 @@ button.ghost{background:#fff;color:var(--navy);border:1px solid #cfd8d5}
 table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
 th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px;font-size:11px;letter-spacing:.8px}
 td{padding:8px 10px;border-bottom:1px solid #eef2f1;vertical-align:top}
-td.amount,th.amount{text-align:right}
+td.num,th.num{text-align:right}
 tr.total td{font-weight:700;color:var(--navy);border-top:2px solid var(--navy);border-bottom:0;background:var(--mist)}
-tr.adjustment td{font-weight:700;color:var(--slate);background:var(--cloud)}
 .flag{border-left:4px solid var(--amber);background:#fdf6e9;padding:11px 14px;border-radius:0 4px 4px 0;
 font-size:13px;margin:10px 0}
 .flag.bad{border-color:var(--risk);background:#fbeced}
@@ -181,7 +180,8 @@ JavaScript is switched off. This tool cannot run without it.</div></noscript>
   <h2>4. Generate</h2>
   <div class="card">
     <button id="gen">Generate the quote file</button>
-    <div class="note" style="margin-top:10px">On a phone, generate first and then tap <strong>Share quote file</strong>. On a computer, the file downloads automatically.</div>
+    <div class="note" style="margin-top:10px"><strong>Download PDF</strong> opens your print dialog. Choose <strong>Save as PDF</strong>, or on iPhone tap the share icon then Save to Files. Use PDF for most clients; use the encrypted file only when the quote is genuinely sensitive.<br><br>Generate the quote file: on a phone this opens the share sheet, so you can send it straight to Mail or save it to Files. On a computer it downloads.</div>
+    <button id="pdf" class="ghost" style="margin-left:8px">Download PDF</button>
     <button id="preview" class="ghost" style="margin-left:8px">Preview without encrypting</button>
     <div id="genMsg" class="note"></div>
   </div>
@@ -229,7 +229,7 @@ const XLSXLite = (() => {
 
   async function inflateRaw(bytes) {
     if (typeof DecompressionStream === "undefined")
-      throw new Error("This browser cannot decompress .xlsx files. Update to iOS/iPadOS 16.4 or later, or use a current Chrome, Edge, Firefox, or Safari browser.");
+      throw new Error("This browser cannot decompress the file. Use Chrome, Edge, Safari, or Firefox.");
     const ds = new DecompressionStream("deflate-raw");
     const stream = new Blob([bytes]).stream().pipeThrough(ds);
     return new Uint8Array(await new Response(stream).arrayBuffer());
@@ -252,17 +252,6 @@ const XLSXLite = (() => {
                     .replace(/&apos;/g,"'").replace(/&#(\d+);/g,(m,d)=>String.fromCharCode(+d))
                     .replace(/&amp;/g,"&");
   const attr = (tag, name) => { const m = tag.match(new RegExp(name.replace(":","\\:")+'="([^"]*)"')); return m ? m[1] : null; };
-  const zipPath = (base, target) => {
-    const raw = String(target || "").replace(/\\/g,"/");
-    const parts = (raw.startsWith("/") ? raw.slice(1) : (raw.startsWith("xl/") ? raw : base + raw)).split("/");
-    const clean = [];
-    for (const part of parts) {
-      if (!part || part === ".") continue;
-      if (part === "..") clean.pop();
-      else clean.push(part);
-    }
-    return clean.join("/");
-  };
 
   function colToIndex(ref) {           // "BC12" -> 54
     let n = 0;
@@ -293,7 +282,8 @@ const XLSXLite = (() => {
       const nm = attr(m[0], "name");
       if (!nm) continue;
       const rid = attr(m[0], "r:id") || attr(m[0], "id");
-      const target = zipPath("xl/", relMap[rid]);
+      let target = relMap[rid] || "";
+      if (target && !target.startsWith("xl/")) target = "xl/" + target.replace(/^\/?/, "");
       sheets[dec(nm)] = target;
     }
 
@@ -314,20 +304,17 @@ const XLSXLite = (() => {
       const sx = await readEntry(arrayBuffer, entries, path);
       if (!sx) continue;
       const rows = [];
-      for (const rm of sx.matchAll(/<row\b([^>]*)>([\s\S]*?)<\/row>/g)) {
-        const rowHead = "<row" + rm[1] + ">";
-        const rowNumber = parseInt(attr(rowHead,"r") || String(rows.length + 1),10);
+      for (const rm of sx.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
         const arr = [];
-        for (const cm of rm[2].matchAll(/<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+        for (const cm of rm[1].matchAll(/<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
           const head = "<c" + cm[1] + ">", body = cm[2] || "";
           const ref = attr(head, "r") || "";
           const idx = ref ? colToIndex(ref) : arr.length;
           const t = attr(head, "t");
           let val = null;
           if (t === "inlineStr") {
-            let inline = "";
-            for (const tm of body.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)) inline += dec(tm[1]);
-            val = inline || null;
+            const tm = body.match(/<t\b[^>]*>([\s\S]*?)<\/t>/);
+            val = tm ? dec(tm[1]) : null;
           } else {
             const vm = body.match(/<v\b[^>]*>([\s\S]*?)<\/v>/);
             if (vm) {
@@ -341,7 +328,7 @@ const XLSXLite = (() => {
           while (arr.length < idx) arr.push(null);
           arr[idx] = val;
         }
-        rows[rowNumber - 1] = arr;
+        rows.push(arr);
       }
       out[name] = rows;
       out.__tabs = Object.keys(sheets);
@@ -392,10 +379,15 @@ async function read(f){
     log("File selected: "+f.name+"  ("+f.size+" bytes)");
     const ab=await f.arrayBuffer();
     log("Loaded into memory: "+ab.byteLength+" bytes");
-    const sheets=await XLSXLite.read(ab,["Client Quote","Quote Calculator","Product Catalogue","Complexity Drivers"]);
+    const sheets=await XLSXLite.read(ab,["Client Quote"]);
     log("Tabs found: "+(sheets.__tabs||[]).join(" | "));
-    const model=modelFromSheets(sheets,f.name);
-    parse(model,f.name,sheets.__tabs||[]);
+    const rows=sheets["Client Quote"];
+    log("Client Quote rows: "+(rows?rows.length:"none"));
+    if(!rows){
+      msg.innerHTML='<div class="flag bad">No <strong>Client Quote</strong> tab in that workbook.<br>Tabs found: '+esc((sheets.__tabs||[]).join(", "))+'</div>';
+      return;
+    }
+    parse(rows,f.name);
   }catch(err){
     log("ERROR in read(): "+(err&&err.stack||err));
     msg.innerHTML='<div class="flag bad"><strong>Could not read that file.</strong><br>'+esc(err.message||String(err))
@@ -403,153 +395,65 @@ async function read(f){
   }
 }
 
-const cell=(rows,row,col)=>rows&&rows[row-1] ? rows[row-1][col-1] : null;
-const asNumber=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
-const roundHundred=n=>Math.round(Number(n||0)/100)*100;
-function checkedNumber(rows,row,col,label,options){
-  options=options||{};
-  const raw=cell(rows,row,col);
-  if(raw==null||String(raw).trim()===""){
-    if(options.allowBlank) return options.blankValue==null ? null : options.blankValue;
-    throw new Error(label+" is blank. Enter a number in the workbook and save it.");
-  }
-  const n=Number(raw);
-  if(!Number.isFinite(n)) throw new Error(label+' must be numeric, but the workbook contains "'+String(raw)+'".');
-  if(options.min!=null&&n<options.min) throw new Error(label+" must be at least "+options.min+".");
-  if(options.max!=null&&n>options.max) throw new Error(label+" must be no more than "+options.max+".");
-  if(options.positive&&n<=0) throw new Error(label+" must be greater than zero.");
-  return n;
-}
-
-function clientQuoteModel(rows,name){
-  const meta={},lines=[];let total=0;const terms=[];
-  (rows||[]).forEach(r=>{
-    r=r||[];
+function parse(rows,name){
+  const meta={},lines=[];let total=0,terms=[],five=false;
+  rows.forEach(r=>{
     const a=(r[0]==null?"":String(r[0])).trim(), b=r[1], c=r[2], d=r[3];
     if(a==="Prepared for") meta.client=b;
     else if(a==="Date") meta.date=b;
     else if(a==="Prepared by") meta.preparer=b;
     else if(a.charAt(0)==="\u2022") terms.push(a.replace(/^\u2022\s*/,""));
-    else if((c==null?"":String(c)).trim()==="Total investment") total=d;
-    else if(a && b && d!==null && d!=="" && a!=="Phase") lines.push({phase:a,delivers:b,duration:c,amount:asNumber(d)});
+    else if((c==null?"":String(c)).trim()==="Total investment") total=(r[4]!=null?r[4]:d);
+    else if(a==="Phase"){ five = (String(r[4]||"").trim()!==""); }
+    else if(a && b && (d!=null||r[4]!=null)){
+      const list = five ? d : d, net = five ? r[4] : d;
+      if(net==null) return;
+      lines.push({phase:a,delivers:b,duration:c,list:Number(list||0),amount:Number(net||0)});
+    }
   });
-  return {meta,lines,total:asNumber(total),terms,source:name,mode:"cached"};
-}
-
-/* This pricing workbook is intentionally formula-driven. Some tools save formulas
-   without cached values, so calculate only the two formula families that feed the quote. */
-function calculatedPricingModel(sheets,name,terms){
-  const qc=sheets["Quote Calculator"], pc=sheets["Product Catalogue"], drivers=sheets["Complexity Drivers"];
-  if(!qc||!pc||!drivers) return null;
-
-  let index=1;
-  for(let i=0;i<11;i++){
-    const driver=String(cell(drivers,5+i,1)||("Complexity driver "+(i+1)));
-    const client=checkedNumber(qc,12+i,2,driver+" — client input",{min:0});
-    const baseline=checkedNumber(drivers,5+i,3,driver+" — baseline",{min:0});
-    const weight=checkedNumber(drivers,5+i,4,driver+" — weight",{min:0});
-    const cap=checkedNumber(drivers,5+i,5,driver+" — cap",{positive:true});
-    const ratio=baseline<=0 ? (client>0 ? 1+client : 1) : Math.max(client,0)/baseline;
-    index+=weight*(Math.min(Math.max(ratio,.5),cap)-1);
-  }
-  const multiplier=Math.min(Math.max(index,.75),3);
-  const lines=[];
-  for(let i=0;i<16;i++){
-    const include=String(cell(qc,33+i,1)||"").trim().toLowerCase()==="yes";
-    if(!include) continue;
-    const product=String(cell(pc,5+i,3)||cell(pc,5+i,1)||("Phase "+(i+1)));
-    const baseFee=checkedNumber(pc,5+i,6,product+" — base fee",{min:0});
-    const sensitivity=checkedNumber(pc,5+i,7,product+" — sensitivity",{min:0});
-    const quantity=checkedNumber(qc,33+i,7,product+" — quantity",{allowBlank:true,blankValue:0,min:0});
-    lines.push({
-      phase:product,
-      delivers:cell(pc,5+i,4)||"",
-      duration:cell(pc,5+i,5)||"",
-      amount:roundHundred(baseFee*(1+(multiplier-1)*sensitivity)*quantity)
-    });
-  }
-  const gross=lines.reduce((sum,line)=>sum+line.amount,0);
-  const discount=checkedNumber(qc,50,8,"Discount",{allowBlank:true,blankValue:0,min:0,max:1});
-  const driversVerified=String(cell(qc,7,2)||"").trim();
-  const readinessScore=checkedNumber(qc,27,2,"Readiness score",{allowBlank:true,min:0});
-  const preworkRequired=readinessScore!=null&&readinessScore<=2;
-  const preworkSelected=String(cell(qc,44,1)||"").trim().toLowerCase()==="yes";
-  return {
-    meta:{client:cell(qc,5,2),date:cell(qc,6,2),preparer:cell(qc,8,2)},
-    lines,gross,discount,total:roundHundred(gross*(1-discount)),terms:terms||[],source:name,mode:"calculated",
-    controls:{driversVerified,readinessScore,preworkRequired,preworkSelected},
-    notice:driversVerified.toLowerCase()==="yes" ? "" : "Drivers are not verified. This quote is indicative only until the inputs are confirmed."
-  };
-}
-
-function modelFromSheets(sheets,name){
-  const cached=clientQuoteModel(sheets["Client Quote"],name);
-  const calculated=calculatedPricingModel(sheets,name,cached.terms);
-  if(calculated) return calculated;
-  if(cached.lines.length){
-    const gross=cached.lines.reduce((sum,line)=>sum+line.amount,0);
-    return Object.assign({},cached,{
-      gross,
-      total:cached.total||0,
-      discount:0,
-      controls:null,
-      notice:""
-    });
-  }
-  return cached;
-}
-
-function parse(model,name,tabs){
-  if(!model||!model.lines.length){
-    $("parseMsg").innerHTML='<div class="flag bad">No quote phases could be calculated. Use the current pricing model, set the phases you are quoting to <strong>Yes</strong> on <strong>Quote Calculator</strong>, save the workbook, and load it again.<br>Tabs found: '+esc((tabs||[]).join(", "))+'</div>';
+  if(!lines.length){
+    $("parseMsg").innerHTML='<div class="flag bad">The Client Quote tab was found but no phases were in it. On the <strong>Quote Calculator</strong> tab, set the phases you are quoting to <strong>Yes</strong>, save the workbook, and load it again.</div>';
     return;
   }
-  log((model.mode==="calculated"?"Calculated":"Read")+" "+model.lines.length+" phases, total "+model.total+", terms "+model.terms.length);
-  DATA=model;
-  $("client").value=model.meta.client||"";
-  $("qdate").value=fmtDate(model.meta.date)||new Date().toISOString().slice(0,10);
-  $("preparer").value=model.meta.preparer||"Alexander Ryerson";
+  log("Parsed "+lines.length+" phases, total "+total+", terms "+terms.length);
+  DATA={meta,lines,total,terms,source:name};
+  $("client").value=meta.client||"";
+  $("qdate").value=fmtDate(meta.date)||new Date().toISOString().slice(0,10);
+  $("preparer").value=meta.preparer||"Alexander Ryerson";
   $("ref").value="RY-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+Math.random().toString(36).slice(2,6).toUpperCase();
   renderLines(); runChecks();
-  $("parseMsg").innerHTML='<div class="flag ok">'+(model.mode==="calculated"?'Calculated':'Read')+' <strong>'+model.lines.length+'</strong> phases from <strong>'+esc(name)+'</strong>.</div>';
+  $("parseMsg").innerHTML='<div class="flag ok">Read <strong>'+lines.length+'</strong> phases from <strong>'+esc(name)+'</strong>.</div>';
   $("stage2").classList.remove("hide");
   $("stage2").scrollIntoView({behavior:"smooth"});
 }
 
+function hasDisc(){ return DATA.lines.some(l=>Number(l.list||0)>Number(l.amount||0)); }
 function renderLines(){
-  let h='<label style="margin-top:20px">PHASES FROM THE WORKBOOK</label><table><tr><th>Phase</th><th>Duration</th><th class="amount">Investment</th></tr>';
-  DATA.lines.forEach(l=>{h+='<tr><td><strong>'+esc(l.phase)+'</strong><div class="note">'+esc(l.delivers||"")+'</div></td><td>'+esc(l.duration||"")+'</td><td class="amount">'+money(l.amount)+'</td></tr>';});
-  if(Number(DATA.discount||0)>0){
-    const gross=Number(DATA.gross||DATA.lines.reduce((sum,line)=>sum+Number(line.amount||0),0));
-    h+='<tr class="adjustment"><td>Gross investment</td><td></td><td class="amount">'+money(gross)+'</td></tr>';
-    h+='<tr class="adjustment"><td>Discount ('+(Number(DATA.discount)*100).toLocaleString("en-CA",{maximumFractionDigits:2})+'%)</td><td></td><td class="amount">−'+money(Math.max(0,gross-Number(DATA.total||0)))+'</td></tr>';
-  }
-  h+='<tr class="total"><td>Total investment</td><td></td><td class="amount">'+money(DATA.total)+'</td></tr></table>';
+  const D=hasDisc();
+  let h='<label style="margin-top:20px">PHASES READ FROM THE WORKBOOK</label><table><tr><th>Phase</th><th>Duration</th>'
+    +(D?'<th class="num">Sales cost</th>':'')+'<th class="num">Investment</th></tr>';
+  DATA.lines.forEach(l=>{
+    const w=Number(l.list||0)>Number(l.amount||0);
+    h+='<tr><td><strong>'+esc(l.phase)+'</strong><div class="note">'+esc(l.delivers||"")+'</div></td><td>'+esc(l.duration||"")+'</td>'
+     +(D?'<td class="num">'+money(l.list)+'</td>':'')
+     +'<td class="num">'+money(l.amount)+(w&&Number(l.amount)===0?' <span class="pill">waived</span>':'')+'</td></tr>';});
+  const sav=DATA.lines.reduce((a,l)=>a+Math.max(0,Number(l.list||0)-Number(l.amount||0)),0);
+  if(D) h+='<tr><td>Total saving</td><td></td><td></td><td class="num" style="color:var(--forest);font-weight:700">'+money(sav)+'</td></tr>';
+  h+='<tr class="total"><td>Total investment</td><td></td>'+(D?'<td></td>':'')+'<td class="num">'+money(DATA.total)+'</td></tr></table>';
   $("lineWrap").innerHTML=h;
 }
 
 function runChecks(){
   const out=[];const sum=DATA.lines.reduce((a,l)=>a+Number(l.amount||0),0);
-  const expected=roundHundred(sum*(1-Number(DATA.discount||0)));
-  const c=$("client").value.trim();
+  const c=(DATA.meta.client||"").toString();
   if(!c||/illustrative|replace|client name|example/i.test(c))
     out.push(['bad','The <strong>Prepared for</strong> field still reads "'+esc(c||"blank")+'". Fix it before generating, or the quote goes out with a placeholder client name.']);
-  if(Math.abs(expected-Number(DATA.total||0))>1)
-    out.push(['bad','The calculated total is '+money(expected)+' but the workbook total says '+money(DATA.total)+'. Check the workbook before sending.']);
-  if(DATA.discount>0)
-    out.push(['','A '+(DATA.discount*100).toLocaleString('en-CA')+'% discount reduces the gross '+money(sum)+' to '+money(DATA.total)+'.']);
-  if(DATA.controls&&String(DATA.controls.driversVerified||"").toLowerCase()!=="yes")
-    out.push(['','The complexity drivers are not verified, so this quote will be marked <strong>indicative</strong>.']);
-  if(DATA.controls&&DATA.controls.preworkRequired&&!DATA.controls.preworkSelected)
-    out.push(['bad','The readiness score is <strong>'+DATA.controls.readinessScore+'</strong> (2 or lower), so <strong>Modernisation Education Pre-Work</strong> is required but not selected.']);
-  if(DATA.lines.some(line=>Number(line.amount||0)===0))
-    out.push(['bad','One or more selected phases has a $0 investment. Enter a valid base fee and quantity in the workbook before generating the quote.']);
+  if(Math.abs(sum-Number(DATA.total||0))>1)
+    out.push(['bad','Line items total '+money(sum)+' but the workbook total says '+money(DATA.total)+'. Check the workbook before sending.']);
   if(!DATA.lines.length) out.push(['bad','No phases were selected in the workbook.']);
-  if(DATA.total>0 && DATA.lines.length && !out.some(o=>o[0]==='bad')) out.push(['ok','Totals reconcile and every required field is populated.']);
+  if(DATA.total>0 && DATA.lines.length && !out.length) out.push(['ok','Totals reconcile and every field is populated.']);
   $("checks").innerHTML=out.map(o=>'<div class="flag '+o[0]+'">'+o[1]+'</div>').join("");
-  return out.some(o=>o[0]==='bad');
 }
-$("client").addEventListener("input",()=>{if(DATA)runChecks()});
 function fmtDate(v){
   if(v==null||v==="") return "";
   if(typeof v==="number"){ const d=new Date(Date.UTC(1899,11,30)+v*86400000); return d.toISOString().slice(0,10); }
@@ -566,13 +470,12 @@ async function keyFrom(email,salt){
 }
 const b64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf)));
 
-function buildPayload(){
+async function buildPayload(){
   return {
     ref:$("ref").value, client:$("client").value, date:$("qdate").value,
     preparer:$("preparer").value, cover:$("cover").value,
     expiry:$("expiry").value||null,
-    lines:DATA.lines, gross:DATA.gross, discount:DATA.discount||0, total:DATA.total,
-    terms:DATA.terms, notice:DATA.notice||""
+    lines:DATA.lines, total:DATA.total, terms:DATA.terms
   };
 }
 
@@ -580,10 +483,9 @@ $("gen").onclick=async()=>{ try{
   const e1=$("email").value.trim(), e2=$("email2").value.trim();
   if(!e1){$("genMsg").innerHTML='<span style="color:var(--risk)">Enter at least one recipient email.</span>';return;}
   if(!$("client").value.trim()){$("genMsg").innerHTML='<span style="color:var(--risk)">Enter the client name.</span>';return;}
-  if(runChecks()){$("genMsg").innerHTML='<span style="color:var(--risk)">Resolve the red validation issue above before generating.</span>';$("checks").scrollIntoView({behavior:"smooth",block:"center"});return;}
   $("gen").disabled=true; $("genMsg").textContent="Encrypting...";
   log("Generate clicked. Recipients: "+[e1,e2].filter(Boolean).length);
-  const payload=JSON.stringify(buildPayload());
+  const payload=JSON.stringify(await buildPayload());
   const blocks=[];
   for(const em of [e1,e2].filter(Boolean)){
     const salt=crypto.getRandomValues(new Uint8Array(16));
@@ -595,78 +497,90 @@ $("gen").onclick=async()=>{ try{
   const html=outputHTML(blocks,$("gateNote").value.trim(),$("client").value.trim(),$("ref").value);
   const name="Ryerson_Quote_"+$("client").value.trim().replace(/[^A-Za-z0-9]+/g,"_")+"_"+$("qdate").value+".html";
   log("Built output HTML: "+html.length+" chars");
-  const delivery=deliver(html,name);
+  const shared=await dl(html,name);
   $("gen").disabled=false;
-  if(delivery.file){
-    $("genMsg").innerHTML='<span style="color:var(--forest)">Generated <strong>'+esc(name)+'</strong>. Tell the recipient which address unlocks it.</span>'
-      +'<div style="margin-top:10px"><button id="shareQuote">Share quote file</button> '
-      +'<button id="saveQuote" class="ghost">Save instead</button></div>';
-    $("shareQuote").onclick=async()=>{try{await navigator.share({files:[delivery.file],title:"Ryerson quote"})}catch(e){log("Share cancelled or unavailable: "+(e&&e.message))}};
-    $("saveQuote").onclick=()=>downloadBlob(delivery.blob,name);
-  }else{
-    $("genMsg").innerHTML='<span style="color:var(--forest)">Generated <strong>'+esc(name)+'</strong> and saved it to your downloads. Tell the recipient which address unlocks it.</span>';
-  }
+  $("genMsg").innerHTML='<span style="color:var(--forest)">Generated <strong>'+esc(name)+'</strong>. '
+    +(shared?'Sent to the share sheet.':'Saved to your downloads.')
+    +' Tell the recipient which address unlocks it.</span>';
   }catch(err){ log("ERROR in generate: "+(err&&err.stack||err)); $("gen").disabled=false;
     $("genMsg").innerHTML='<span style="color:var(--risk)">Generation failed: '+esc(err.message||String(err))+'. Open Technical details below.</span>'; }
 };
 
-$("preview").onclick=()=>{
+$("pdf").onclick=async()=>{
   if(!$("client").value.trim()){$("genMsg").innerHTML='<span style="color:var(--risk)">Enter the client name.</span>';return;}
+  const p=await buildPayload();
+  log("PDF requested");
   const w=window.open("","_blank");
-  if(!w){$("genMsg").innerHTML='<span style="color:var(--risk)">The preview was blocked. Allow pop-ups for this site and try again.</span>';return;}
-  w.document.write(previewHTML(buildPayload()));
+  if(!w){$("genMsg").innerHTML='<span style="color:var(--risk)">Your browser blocked the new window. Allow pop-ups and try again.</span>';return;}
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ryerson quote '
+    +esc(p.client)+'</title>'+QSTYLE+'</head><body>'+quoteBody(p)
+    +'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print()},350)}<\/scr'+'ipt></body></html>');
+  w.document.close();
+  $("genMsg").innerHTML='<span style="color:var(--forest)">Print dialog opening. Choose <strong>Save as PDF</strong>.</span>';
+};
+
+$("preview").onclick=async()=>{
+  if(!$("client").value.trim()){$("genMsg").innerHTML='<span style="color:var(--risk)">Enter the client name.</span>';return;}
+  const p=await buildPayload();
+  const w=window.open("","_blank");
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preview</title>'+QSTYLE+'</head><body>'+quoteBody(p)+'</body></html>');
   w.document.close();
 };
 
-function deliver(txt,name){
+async function dl(txt,name){
   const blob=new Blob([txt],{type:"text/html"});
+  // iOS and Android: use the share sheet, which is how phones actually move files
   try{
     const f=new File([blob],name,{type:"text/html"});
-    if(navigator.canShare&&navigator.canShare({files:[f]})) return {blob,file:f};
-  }catch(e){log("File sharing unavailable: "+(e&&e.message))}
-  downloadBlob(blob,name);
-  return {blob,file:null};
-}
-
-function downloadBlob(blob,name){
+    if(navigator.canShare && navigator.canShare({files:[f]})){
+      log("Using share sheet");
+      await navigator.share({files:[f],title:"Ryerson quote"});
+      return true;
+    }
+  }catch(e){ log("Share cancelled or unavailable: "+(e&&e.message)); }
+  // Desktop and fallback: normal download
   log("Using download");
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob); a.download=name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  return false;
 }
+
+const QSTYLE=`<style>
+:root{--navy:#0D1B2A;--forest:#2D6A4F;--slate:#52606D;--steel:#8A969F;--mist:#E9F1EE;--carbon:#15202B}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--carbon);background:#fff;line-height:1.55}
+.q{max-width:800px;margin:0 auto;padding:34px 40px}
+.qhead{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:2px solid var(--navy)}
+.qhead img{width:44px}
+.qwm{font-weight:700;letter-spacing:4.5px;color:var(--navy);font-size:17px}
+.qds{color:var(--forest);font-size:8.5px;letter-spacing:2.2px;font-weight:700;margin-top:2px}
+.qref{margin-left:auto;font-size:10.5px;color:var(--steel);letter-spacing:1.2px}
+h1{font-size:24px;color:var(--navy);margin:22px 0 16px}
+.meta{display:flex;gap:34px;flex-wrap:wrap;margin-bottom:18px}
+.meta span{display:block;font-size:9.5px;letter-spacing:1.3px;color:var(--slate);font-weight:700}
+.meta strong{color:var(--navy);font-size:14px}
+.cover{background:var(--mist);padding:13px 16px;border-radius:4px;font-size:13.5px;margin-bottom:18px}
+table{width:100%;border-collapse:collapse}
+th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px;font-size:10px;letter-spacing:1px}
+td{padding:11px 10px;border-bottom:1px solid #eef2f1;vertical-align:top;font-size:13px}
+.ph{font-weight:700;color:var(--navy)}
+.dl{color:var(--slate);font-size:12px;margin-top:3px}
+.du{white-space:nowrap;color:var(--slate)}
+.am{text-align:right;white-space:nowrap}
+.st{color:var(--slate);text-decoration:line-through}
+tfoot td{font-weight:700;color:var(--navy);font-size:15px;border-top:2px solid var(--navy);background:var(--mist)}
+h2{font-size:11.5px;letter-spacing:1.4px;color:var(--forest);margin:26px 0 8px}
+ul{margin:0;padding-left:18px} li{font-size:12.5px;margin-bottom:6px}
+.exp{font-size:12.5px;color:var(--slate);margin-top:16px;font-style:italic}
+.qfoot{margin-top:30px;padding-top:11px;border-top:1px solid #e3e9e7;font-size:10px;letter-spacing:1.4px;color:var(--slate);text-align:center}
+@page{margin:14mm}
+</style>`;
 
 /* ---------- quote body, shared by preview and output ---------- */
-function quoteStyles(){return `
-:root{--navy:#0D1B2A;--forest:#2D6A4F;--teal:#0F7C78;--growth:#74B82A;--carbon:#15202B;--slate:#52606D;--steel:#8A969F;--mist:#E9F1EE;--cloud:#F6F8F7;--risk:#B23A48}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--carbon);background:var(--cloud);line-height:1.55}
-.q{max-width:820px;margin:0 auto;background:#fff;padding:44px 52px 32px;min-height:100vh}.qhead{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:2px solid var(--navy)}
-.qhead img{width:46px}.qwm{font-weight:700;letter-spacing:4.5px;color:var(--navy);font-size:17px}.qds{color:var(--forest);font-size:8.5px;letter-spacing:2.2px;font-weight:700;margin-top:2px}.qref{margin-left:auto;font-size:10.5px;color:var(--steel);letter-spacing:1.2px}
-h1{font-size:25px;color:var(--navy);margin:26px 0 18px}.meta{display:flex;gap:38px;flex-wrap:wrap;margin-bottom:22px}.meta span{display:block;font-size:9.5px;letter-spacing:1.3px;color:var(--slate);font-weight:700}.meta strong{color:var(--navy);font-size:14px}
-.cover{background:var(--mist);padding:14px 17px;border-radius:4px;font-size:13.5px;margin-bottom:22px}.notice{border-left:4px solid var(--risk);background:#fbeced;padding:12px 15px;font-size:12.5px;font-weight:700;margin:0 0 22px}
-table{width:100%;border-collapse:collapse;margin-top:6px}th{background:var(--navy);color:#fff;text-align:left;padding:9px 11px;font-size:10px;letter-spacing:1px}td{padding:12px 11px;border-bottom:1px solid #eef2f1;vertical-align:top;font-size:13.5px}.ph{font-weight:700;color:var(--navy)}.dl{color:var(--slate);font-size:12.5px;margin-top:3px}.du{white-space:nowrap;color:var(--slate)}.am{text-align:right;white-space:nowrap}tfoot tr.gross td{font-weight:700;color:var(--navy);border-top:2px solid var(--navy)}tfoot tr.discount td{font-weight:700;color:var(--slate);background:var(--cloud)}tfoot tr.total td{font-weight:700;color:var(--navy);font-size:15px;border-top:2px solid var(--navy);border-bottom:0;background:var(--mist)}
-h2{font-size:12px;letter-spacing:1.4px;color:var(--forest);margin:30px 0 8px}ul{margin:0;padding-left:18px}li{font-size:12.5px;color:var(--carbon);margin-bottom:6px}.exp{font-size:12.5px;color:var(--slate);margin-top:18px;font-style:italic}.qfoot{margin-top:34px;padding-top:12px;border-top:1px solid #e3e9e7;font-size:10px;letter-spacing:1.4px;color:var(--slate);text-align:center}
-@media(max-width:600px){.q{padding:26px 18px}.qhead{align-items:flex-start}.qref{max-width:42%;overflow-wrap:anywhere}.meta{gap:14px 24px}h1{font-size:22px}.du{white-space:normal}td,th{padding:9px 6px}}
-@media print{body{background:#fff}.q{padding:0}}
-`}
-
-function previewHTML(p){
-  return '<!DOCTYPE html><html lang="en-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quote preview</title><style>'+quoteStyles()+'</style></head><body>'+quoteBody(p)+'</body></html>';
-}
-
-function quoteSummaryRows(p){
-  const gross=Number(p.gross==null?p.lines.reduce((sum,line)=>sum+Number(line.amount||0),0):p.gross);
-  const discount=Number(p.discount||0);
-  let rows="";
-  if(discount>0){
-    rows+='<tr class="gross"><td>Gross investment</td><td></td><td class="am">'+money(gross)+'</td></tr>';
-    rows+='<tr class="discount"><td>Discount ('+(discount*100).toLocaleString("en-CA",{maximumFractionDigits:2})+'%)</td><td></td><td class="am">−'+money(Math.max(0,gross-Number(p.total||0)))+'</td></tr>';
-  }
-  return rows+'<tr class="total"><td>Total investment</td><td></td><td class="am">'+money(p.total)+'</td></tr>';
-}
-
 function quoteBody(p){
-  let rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td><td class="du">'+esc(l.duration||"")+'</td><td class="am">'+money(l.amount)+'</td></tr>').join("");
+  const D=p.lines.some(l=>Number(l.list||0)>Number(l.amount||0));
+  let rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td><td class="du">'+esc(l.duration||"")+'</td>'+(D?'<td class="am st">'+money(l.list)+'</td>':'')+'<td class="am">'+money(l.amount)+'</td></tr>').join("");
   return `
 <div class="q">
   <div class="qhead">
@@ -681,10 +595,9 @@ function quoteBody(p){
     <div><span>Prepared by</span><strong>${esc(p.preparer)}</strong></div>
   </div>
   ${p.cover?'<p class="cover">'+esc(p.cover)+'</p>':''}
-  ${p.notice?'<p class="notice">'+esc(p.notice)+'</p>':''}
-  <table><thead><tr><th>Phase</th><th>Duration</th><th class="am">Investment</th></tr></thead>
+  <table><thead><tr><th>Phase</th><th>Duration</th>${D?'<th class="am">Sales cost</th>':''}<th class="am">Investment</th></tr></thead>
   <tbody>${rows}</tbody>
-  <tfoot>${quoteSummaryRows(p)}</tfoot></table>
+  <tfoot><tr><td>Total investment</td><td></td>${D?'<td></td>':''}<td class="am">${money(p.total)}</td></tr></tfoot></table>
   <h2>Terms</h2><ul>${p.terms.map(t=>'<li>'+esc(t)+'</li>').join("")}</ul>
   ${p.expiry?'<p class="exp">This quote is valid until '+esc(p.expiry)+'.</p>':''}
   <div class="qfoot">SYSTEMS &nbsp;|&nbsp; CAPACITY &nbsp;|&nbsp; TRUST &nbsp;|&nbsp; VALUE</div>
@@ -724,7 +637,6 @@ h1{font-size:25px;color:var(--navy);margin:26px 0 18px}
 .meta span{display:block;font-size:9.5px;letter-spacing:1.3px;color:var(--slate);font-weight:700}
 .meta strong{color:var(--navy);font-size:14px}
 .cover{background:var(--mist);padding:14px 17px;border-radius:4px;font-size:13.5px;margin-bottom:22px}
-.notice{border-left:4px solid var(--risk);background:#fbeced;padding:12px 15px;font-size:12.5px;font-weight:700;margin:0 0 22px}
 table{width:100%;border-collapse:collapse;margin-top:6px}
 th{background:var(--navy);color:#fff;text-align:left;padding:9px 11px;font-size:10px;letter-spacing:1px}
 td{padding:12px 11px;border-bottom:1px solid #eef2f1;vertical-align:top;font-size:13.5px}
@@ -732,9 +644,8 @@ td{padding:12px 11px;border-bottom:1px solid #eef2f1;vertical-align:top;font-siz
 .dl{color:var(--slate);font-size:12.5px;margin-top:3px}
 .du{white-space:nowrap;color:var(--slate)}
 .am{text-align:right;white-space:nowrap}
-tfoot tr.gross td{font-weight:700;color:var(--navy);border-top:2px solid var(--navy)}
-tfoot tr.discount td{font-weight:700;color:var(--slate);background:var(--cloud)}
-tfoot tr.total td{font-weight:700;color:var(--navy);font-size:15px;border-top:2px solid var(--navy);
+.st{color:var(--slate);text-decoration:line-through}
+tfoot td{font-weight:700;color:var(--navy);font-size:15px;border-top:2px solid var(--navy);
 border-bottom:0;background:var(--mist)}
 h2{font-size:12px;letter-spacing:1.4px;color:var(--forest);margin:30px 0 8px}
 ul{margin:0;padding-left:18px}
@@ -742,14 +653,14 @@ li{font-size:12.5px;color:var(--carbon);margin-bottom:6px}
 .exp{font-size:12.5px;color:var(--slate);margin-top:18px;font-style:italic}
 .qfoot{margin-top:34px;padding-top:12px;border-top:1px solid #e3e9e7;font-size:10px;
 letter-spacing:1.4px;color:var(--slate);text-align:center}
-@media(max-width:600px){.q{padding:26px 18px}.qhead{align-items:flex-start}.qref{max-width:42%;overflow-wrap:anywhere}.meta{gap:14px 24px}h1{font-size:22px}.du{white-space:normal}td,th{padding:9px 6px}}
 @media print{.gate{display:none}body{background:#fff}.q{padding:0}}
 </style></head>
 <body>
 <div id="jswarn" style="background:#B23A48;color:#fff;padding:16px 20px;font-size:14px;line-height:1.5;font-family:Arial,Helvetica,sans-serif">
-  <strong>This quote needs a browser that can run JavaScript.</strong><br>
-  Mail and file previews usually do not run the email-unlock screen.<br><br>
-  Open this file in Chrome, Edge, Firefox, or Safari on a computer. For reliable phone delivery, send the quote as a hosted HTTPS link or a PDF.
+  <strong>This quote needs a real browser to open.</strong><br>
+  You are most likely viewing a file preview. Nothing will happen when you enter your email.<br><br>
+  <strong>On iPhone or iPad:</strong> tap the share icon and choose <strong>Open in Safari</strong> or <strong>Open in Chrome</strong>.<br>
+  <strong>On a computer:</strong> right-click the file, choose <strong>Open with</strong>, and pick a browser.
 </div>
 <noscript><div style="background:#B23A48;color:#fff;padding:16px 20px;font-family:Arial,Helvetica,sans-serif">
 JavaScript is switched off. This quote cannot be displayed without it.</div></noscript>
@@ -787,13 +698,9 @@ async function tryOpen(){
         base,{name:"AES-GCM",length:256},false,["decrypt"]);
       const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:ub(b.i)},k,ub(b.c));
       const p=JSON.parse(d.decode(pt));
-      if(p.expiry){
-        const parts=p.expiry.split("-").map(Number);
-        const expires=new Date(parts[0],parts[1]-1,parts[2],23,59,59,999);
-        if(Date.now()>expires.getTime()){
-          document.getElementById("er").textContent="This quote expired on "+p.expiry+". Contact the sender for a current version.";
-          document.getElementById("er").style.display="block";return;
-        }
+      if(p.expiry && new Date(p.expiry) < new Date(new Date().toDateString())){
+        document.getElementById("er").textContent="This quote expired on "+p.expiry+". Contact the sender for a current version.";
+        document.getElementById("er").style.display="block";return;
       }
       document.getElementById("gate").style.display="none";
       document.getElementById("out").innerHTML=render(p);
@@ -803,15 +710,8 @@ async function tryOpen(){
   document.getElementById("er").style.display="block";
 }
 function render(p){
-  const rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td><td class="du">'+esc(l.duration||"")+'</td><td class="am">'+money(l.amount)+'</td></tr>').join("");
-  const gross=Number(p.gross==null?p.lines.reduce((sum,line)=>sum+Number(line.amount||0),0):p.gross);
-  const discount=Number(p.discount||0);
-  let summary="";
-  if(discount>0){
-    summary+='<tr class="gross"><td>Gross investment</td><td></td><td class="am">'+money(gross)+'</td></tr>';
-    summary+='<tr class="discount"><td>Discount ('+(discount*100).toLocaleString("en-CA",{maximumFractionDigits:2})+'%)</td><td></td><td class="am">−'+money(Math.max(0,gross-Number(p.total||0)))+'</td></tr>';
-  }
-  summary+='<tr class="total"><td>Total investment</td><td></td><td class="am">'+money(p.total)+'</td></tr>';
+  const D=p.lines.some(l=>Number(l.list||0)>Number(l.amount||0));
+  const rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td><td class="du">'+esc(l.duration||"")+'</td>'+(D?'<td class="am st">'+money(l.list)+'</td>':'')+'<td class="am">'+money(l.amount)+'</td></tr>').join("");
   return '<div class="q"><div class="qhead"><img src="data:image/png;base64,${EMBLEM}" alt="">'
    +'<div><div class="qwm">RYERSON</div><div class="qds">AI OPERATIONS &amp; ECONOMICS</div></div>'
    +'<div class="qref">'+esc(p.ref)+'</div></div>'
@@ -820,9 +720,8 @@ function render(p){
    +'<div><span>DATE</span><strong>'+esc(p.date)+'</strong></div>'
    +'<div><span>PREPARED BY</span><strong>'+esc(p.preparer)+'</strong></div></div>'
    +(p.cover?'<p class="cover">'+esc(p.cover)+'</p>':'')
-   +(p.notice?'<p class="notice">'+esc(p.notice)+'</p>':'')
    +'<table><thead><tr><th>PHASE</th><th>DURATION</th><th class="am">INVESTMENT</th></tr></thead><tbody>'
-   +rows+'</tbody><tfoot>'+summary+'</tfoot></table>'
+   +rows+'</tbody><tfoot><tr><td>Total investment</td><td></td><td class="am">'+money(p.total)+'</td></tr></tfoot></table>'
    +'<h2>TERMS</h2><ul>'+p.terms.map(t=>'<li>'+esc(t)+'</li>').join("")+'</ul>'
    +(p.expiry?'<p class="exp">This quote is valid until '+esc(p.expiry)+'.</p>':'')
    +'<div class="qfoot">SYSTEMS &nbsp;|&nbsp; CAPACITY &nbsp;|&nbsp; TRUST &nbsp;|&nbsp; VALUE</div></div>';
