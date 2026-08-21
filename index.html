@@ -26,10 +26,23 @@ box-shadow:0 3px 12px rgba(13,27,42,.06)}
 .num{background:var(--forest);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;
 align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:0 0 22px}
 label{display:block;font-size:11px;font-weight:700;color:var(--forest);letter-spacing:1.1px;margin:14px 0 5px}
-input[type=text],input[type=email],input[type=date],textarea{display:block;width:100%;min-width:0;max-width:100%;padding:9px 11px;border:1px solid #cfd8d5;
+input[type=text],input[type=email],input[type=date],select,textarea{display:block;width:100%;min-width:0;max-width:100%;padding:9px 11px;border:1px solid #cfd8d5;
 border-radius:4px;font-family:inherit;font-size:14px;color:var(--carbon)}
+.date-shell{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow:hidden;contain:inline-size;
+border:1px solid #cfd8d5;border-radius:4px;background:#fff;position:relative}
+.date-shell input[type=date]{display:block;box-sizing:border-box;width:100%;inline-size:100%;max-width:100%;
+max-inline-size:100%;min-width:0;min-inline-size:0;border:0;border-radius:0;background:transparent;overflow:hidden}
+.date-shell:focus-within{outline:2px solid var(--teal);outline-offset:-1px;border-color:var(--teal)}
+.date-shell input[type=date]:focus{outline:0}
+@supports (-webkit-touch-callout:none){
+  .date-shell input[type=date]{-webkit-appearance:none;appearance:none;inline-size:100%;min-inline-size:0;
+    max-inline-size:100%;min-height:48px}
+  .date-shell input[type=date]::-webkit-date-and-time-value{min-width:0;text-align:left}
+  .date-shell input[type=date]::-webkit-calendar-picker-indicator{margin:0;flex:0 0 auto}
+}
 textarea{min-height:74px;resize:vertical}
-input:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:-1px;border-color:var(--teal)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:-1px;border-color:var(--teal)}
+.date-shell input[type=date]:focus{outline:0;border-color:transparent}
 .drop{border:2px dashed #b9c7c3;border-radius:6px;padding:34px;text-align:center;background:var(--cloud);cursor:pointer;transition:.15s}
 .drop:hover,.drop.over{border-color:var(--teal);background:#eef5f3}
 .drop span{color:var(--slate);font-size:12.5px;display:block;margin-top:10px}
@@ -58,11 +71,22 @@ font-size:13px;margin:10px 0}
 .flag.ok{border-color:var(--forest);background:var(--mist)}
 .note{font-size:12px;color:var(--slate);margin-top:8px}
 .hide{display:none}
-.pill{display:inline-block;background:var(--mist);color:var(--forest);font-size:11px;font-weight:700;
-padding:3px 9px;border-radius:11px;letter-spacing:.5px}
+.pill{display:inline-block;background:var(--mist);color:var(--forest);border:1px solid var(--forest);font-size:11px;font-weight:700;
+padding:3px 9px;border-radius:11px;letter-spacing:.5px;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.financial-value{white-space:nowrap;font-variant-numeric:tabular-nums}
+.investment-value{display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:nowrap;white-space:nowrap}
+.tax-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.tax-option{display:flex;align-items:flex-start;gap:9px;margin:0;padding:11px;border:1px solid #cfd8d5;
+border-radius:5px;color:var(--carbon);font-size:12px;letter-spacing:0;cursor:pointer}
+.tax-option input{width:auto;flex:0 0 auto;margin:2px 0 0}
+.tax-option strong{display:block;color:var(--navy);font-size:12px;margin-bottom:2px}
+.tax-summary{margin-top:12px;padding:10px 12px;border-left:4px solid var(--forest);background:var(--mist);font-size:12px}
+.tax-summary.bad{border-color:var(--risk);background:#fbeced;color:var(--risk)}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}
+.actions button{margin:0!important;min-width:0;flex:1 1 250px;white-space:normal;overflow-wrap:anywhere}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 @media(max-width:760px){
-  .grid2{grid-template-columns:1fr}
+  .grid2,.tax-options{grid-template-columns:1fr}
   header{padding:16px 18px;gap:12px}
   header .wm{font-size:17px;letter-spacing:4px}
   header .rt{font-size:9.5px;letter-spacing:1px}
@@ -72,8 +96,9 @@ padding:3px 9px;border-radius:11px;letter-spacing:.5px}
   .drop{padding:24px 14px}
   .dropalt{display:none}
   button{width:100%;padding:15px;font-size:15px}
-  button.ghost{margin-left:0 !important;margin-top:10px}
-  input[type=text],input[type=email],input[type=date],textarea{font-size:16px;padding:12px}
+  .actions{display:grid;grid-template-columns:1fr;width:100%}
+  .actions button{width:100%}
+  input[type=text],input[type=email],input[type=date],select,textarea{font-size:16px;padding:12px}
   table{font-size:12px;width:100%}
   td,th{padding:7px 5px}
   #lineWrap colgroup,#lineWrap tr:first-of-type{display:none}
@@ -85,9 +110,9 @@ padding:3px 9px;border-radius:11px;letter-spacing:.5px}
   #lineWrap .duration-cell,#lineWrap .sales-cost-cell,#lineWrap .investment-cell{
     grid-column:1/-1;display:flex;justify-content:space-between;gap:14px;text-align:right;white-space:normal}
   #lineWrap td[data-label] .cell-value{margin-left:auto;display:inline-flex;align-items:center;
-    justify-content:flex-end;gap:8px;flex-wrap:wrap;min-width:0}
+    justify-content:flex-end;gap:8px;flex:0 0 auto;flex-wrap:nowrap;min-width:0;white-space:nowrap}
   #lineWrap td[data-label]::before{content:attr(data-label);color:var(--slate);font-size:10px;
-    font-weight:700;letter-spacing:.7px;text-transform:uppercase;text-align:left}
+    font-weight:700;letter-spacing:.7px;text-transform:uppercase;text-align:left;flex:1 1 auto;min-width:0}
   #lineWrap .saving-row .phase-cell,#lineWrap .total .phase-cell{grid-column:1;padding:3px 0}
   #lineWrap .saving-row .investment-cell,#lineWrap .total .investment-cell{
     grid-column:2;display:block;padding:3px 0;white-space:nowrap}
@@ -98,7 +123,13 @@ padding:3px 9px;border-radius:11px;letter-spacing:.5px}
   h2{font-size:15px}
 }
 footer{border-top:1px solid #e3e9e7;margin-top:30px;padding-top:12px;font-size:11px;color:var(--slate);
-letter-spacing:1px}
+letter-spacing:1px;display:flex;flex-wrap:wrap;gap:4px 12px}
+footer span{min-width:0;overflow-wrap:anywhere}
+footer span+span::before{content:"|";margin-right:12px;color:var(--steel)}
+@media(max-width:460px){
+  header{flex-wrap:wrap}
+  header .rt{margin-left:56px;flex-basis:100%;text-align:left}
+}
 </style>
 </head>
 <body>
@@ -156,7 +187,7 @@ letter-spacing:1px}
       </div>
       <div>
         <label>DATE ISSUED</label>
-        <input type="date" id="qdate">
+        <div class="date-shell"><input type="date" id="qdate"></div>
       </div>
       <div>
         <label>PREPARED BY</label>
@@ -166,26 +197,58 @@ letter-spacing:1px}
         <label>QUOTE REFERENCE</label>
         <input type="text" id="ref">
       </div>
+      <div>
+        <label for="province">CLIENT PROVINCE OR TERRITORY</label>
+        <select id="province">
+          <option value="">Select the client's province or territory</option>
+          <option value="AB">Alberta</option>
+          <option value="BC">British Columbia</option>
+          <option value="MB">Manitoba</option>
+          <option value="NB">New Brunswick</option>
+          <option value="NL">Newfoundland and Labrador</option>
+          <option value="NT">Northwest Territories</option>
+          <option value="NS">Nova Scotia</option>
+          <option value="NU">Nunavut</option>
+          <option value="ON">Ontario</option>
+          <option value="PE">Prince Edward Island</option>
+          <option value="QC">Quebec</option>
+          <option value="SK">Saskatchewan</option>
+          <option value="YT">Yukon</option>
+        </select>
+        <div class="note">Use the client's address most closely connected to this engagement.</div>
+      </div>
     </div>
+    <label>GST/HST TREATMENT</label>
+    <div class="tax-options" role="radiogroup" aria-label="GST/HST treatment">
+      <label class="tax-option">
+        <input type="radio" name="taxMode" value="not_registered" checked>
+        <span><strong>Do not charge GST/HST</strong>Use this only when not registered and not yet required to register.</span>
+      </label>
+      <label class="tax-option">
+        <input type="radio" name="taxMode" value="charge">
+        <span><strong>Charge GST/HST</strong>The rate is calculated from the selected client province or territory.</span>
+      </label>
+    </div>
+    <div id="taxSummary" class="tax-summary"></div>
     <div id="lineWrap"></div>
     <div id="checks"></div>
   </div>
 
   <h2>3. Who may open it</h2>
-  <p class="sub">The recipient enters this address to unlock the file. Case and surrounding spaces are ignored. The two message fields are filled in for you and can be edited or cleared.</p>
+  <p class="sub"><strong>No email is sent by this page.</strong> The address below is used only to create the encrypted file's unlock key. After generating, you must share or email the downloaded file yourself. Case and surrounding spaces are ignored.</p>
   <div class="card">
     <div class="grid2">
       <div>
-        <label>RECIPIENT EMAIL</label>
+        <label>UNLOCK EMAIL ADDRESS</label>
         <input type="email" id="email" placeholder="name@company.com">
       </div>
       <div>
-        <label>SECOND EMAIL, OPTIONAL</label>
+        <label>SECOND UNLOCK EMAIL, OPTIONAL</label>
         <input type="email" id="email2" placeholder="Leave blank if not needed">
       </div>
       <div>
         <label>VALID UNTIL</label>
-        <input type="date" id="expiry">
+        <div class="date-shell"><input type="date" id="expiry"></div>
         <div class="note">Defaults to 30 days from today. You can change or clear it.</div>
       </div>
       <div>
@@ -199,15 +262,17 @@ letter-spacing:1px}
 
   <h2>4. Generate</h2>
   <div class="card">
-    <button id="gen">Generate the quote file</button>
-    <div class="note" style="margin-top:10px"><strong>Download PDF</strong> opens your print dialog. Choose <strong>Save as PDF</strong>, or on iPhone tap the share icon then Save to Files. Use PDF for most clients; use the encrypted file only when the quote is genuinely sensitive.<br><br>Generate the quote file: on a phone this opens the share sheet, so you can send it straight to Mail or save it to Files. On a computer it downloads.</div>
-    <button id="pdf" class="ghost" style="margin-left:8px">Download PDF</button>
-    <button id="preview" class="ghost" style="margin-left:8px">Preview without encrypting</button>
+    <div class="note" style="margin-top:10px"><strong>This generator does not send email.</strong> On a phone, generating opens the share sheet so you can choose Mail or save the file. On a computer, it downloads the file for you to attach manually.<br><br><strong>Download PDF</strong> opens your print dialog. Choose <strong>Save as PDF</strong>, or on iPhone tap the share icon then Save to Files. Use PDF for most clients; use the encrypted file only when the quote is genuinely sensitive.</div>
+    <div class="actions">
+      <button id="gen">Generate and share encrypted quote</button>
+      <button id="pdf" class="ghost">Download PDF</button>
+      <button id="preview" class="ghost">Preview without encrypting</button>
+    </div>
     <div id="genMsg" class="note"></div>
   </div>
 </div>
 
-<footer>SYSTEMS &nbsp;|&nbsp; CAPACITY &nbsp;|&nbsp; TRUST &nbsp;|&nbsp; VALUE</footer>
+<footer><span>SYSTEMS</span><span>CAPACITY</span><span>TRUST</span><span>VALUE</span></footer>
 </div>
 
 <script>
@@ -292,27 +357,28 @@ const XLSXLite = (() => {
     const relsXml = await readEntry(arrayBuffer, entries, "xl/_rels/workbook.xml.rels");
 
     const relMap = {};
-    if (relsXml) for (const m of relsXml.matchAll(/<Relationship\b[^>]*>/g)) {
+    if (relsXml) for (const m of relsXml.matchAll(/<(?:[A-Za-z_][\w.-]*:)?Relationship\b[^>]*>/g)) {
       const id = attr(m[0], "Id"), t = attr(m[0], "Target");
       if (id && t) relMap[id] = t;
     }
 
     const sheets = {};
-    for (const m of wbXml.matchAll(/<sheet\b[^>]*\/?>/g)) {
+    for (const m of wbXml.matchAll(/<(?:[A-Za-z_][\w.-]*:)?sheet\b[^>]*\/?>/g)) {
       const nm = attr(m[0], "name");
       if (!nm) continue;
       const rid = attr(m[0], "r:id") || attr(m[0], "id");
       let target = relMap[rid] || "";
-      if (target && !target.startsWith("xl/")) target = "xl/" + target.replace(/^\/?/, "");
+      target = target.replace(/^\/+/, "");
+      if (target && !target.startsWith("xl/")) target = "xl/" + target;
       sheets[dec(nm)] = target;
     }
 
     // shared strings
     const ssXml = await readEntry(arrayBuffer, entries, "xl/sharedStrings.xml");
     const shared = [];
-    if (ssXml) for (const si of ssXml.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g)) {
+    if (ssXml) for (const si of ssXml.matchAll(/<(?:[A-Za-z_][\w.-]*:)?si\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?si>/g)) {
       let t = "";
-      for (const tm of si[1].matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)) t += dec(tm[1]);
+      for (const tm of si[1].matchAll(/<(?:[A-Za-z_][\w.-]*:)?t\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?t>/g)) t += dec(tm[1]);
       shared.push(t);
     }
 
@@ -324,19 +390,19 @@ const XLSXLite = (() => {
       const sx = await readEntry(arrayBuffer, entries, path);
       if (!sx) continue;
       const rows = [];
-      for (const rm of sx.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+      for (const rm of sx.matchAll(/<(?:[A-Za-z_][\w.-]*:)?row\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?row>/g)) {
         const arr = [];
-        for (const cm of rm[1].matchAll(/<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+        for (const cm of rm[1].matchAll(/<(?:[A-Za-z_][\w.-]*:)?c\b([^>]*)(?:\/>|>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?c>)/g)) {
           const head = "<c" + cm[1] + ">", body = cm[2] || "";
           const ref = attr(head, "r") || "";
           const idx = ref ? colToIndex(ref) : arr.length;
           const t = attr(head, "t");
           let val = null;
           if (t === "inlineStr") {
-            const tm = body.match(/<t\b[^>]*>([\s\S]*?)<\/t>/);
+            const tm = body.match(/<(?:[A-Za-z_][\w.-]*:)?t\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?t>/);
             val = tm ? dec(tm[1]) : null;
           } else {
-            const vm = body.match(/<v\b[^>]*>([\s\S]*?)<\/v>/);
+            const vm = body.match(/<(?:[A-Za-z_][\w.-]*:)?v\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?v>/);
             if (vm) {
               const raw = dec(vm[1]);
               if (t === "s") val = shared[parseInt(raw, 10)] ?? null;
@@ -374,7 +440,52 @@ window.addEventListener("unhandledrejection",e=>{
   log("UNHANDLED PROMISE: "+(e.reason&&e.reason.message||e.reason));
 });
 log("Generator loaded. Decompression available: "+(typeof DecompressionStream!=="undefined"));
-const money=n=>"$"+Number(n||0).toLocaleString("en-CA",{maximumFractionDigits:0});
+const money=n=>"$"+Number(n||0).toLocaleString("en-CA",{minimumFractionDigits:2,maximumFractionDigits:2});
+const PROVINCES={AB:"Alberta",BC:"British Columbia",MB:"Manitoba",NB:"New Brunswick",
+  NL:"Newfoundland and Labrador",NT:"Northwest Territories",NS:"Nova Scotia",NU:"Nunavut",
+  ON:"Ontario",PE:"Prince Edward Island",QC:"Quebec",SK:"Saskatchewan",YT:"Yukon"};
+const TAX_RATES={AB:.05,BC:.05,MB:.05,NT:.05,NU:.05,QC:.05,SK:.05,YT:.05,
+  ON:.13,NS:.14,NB:.15,NL:.15,PE:.15};
+const NO_TAX_NOTE="Not registered for GST/HST; no HST charged.";
+function provinceCode(value){
+  const s=String(value==null?"":value).trim();
+  if(PROVINCES[s.toUpperCase()]) return s.toUpperCase();
+  const normalized=s.toLowerCase().replace(/[^a-z]/g,"");
+  return Object.keys(PROVINCES).find(code=>PROVINCES[code].toLowerCase().replace(/[^a-z]/g,"")===normalized)||"";
+}
+function provinceInText(value){
+  const s=String(value==null?"":value);
+  const direct=provinceCode(s);
+  if(direct) return direct;
+  return Object.keys(PROVINCES).find(code=>new RegExp("\\b"+PROVINCES[code].replace(/[.*+?^${}()|[\\]\\]/g,"\\$&")+"\\b","i").test(s))||"";
+}
+function selectedTaxMode(){
+  const checked=document.querySelector('input[name="taxMode"]:checked');
+  return checked?checked.value:"not_registered";
+}
+function taxDetails(subtotal,mode=selectedTaxMode(),province=$("province").value){
+  const preTax=Math.round(Number(subtotal||0)*100)/100;
+  if(mode!=="charge") return {mode:"not_registered",label:"HST",rate:0,amount:0,
+    grandTotal:preTax,note:NO_TAX_NOTE};
+  const rate=TAX_RATES[province]||0;
+  const label=rate===.05?"GST":"HST";
+  const amount=Math.round(preTax*rate*100)/100;
+  return {mode:"charge",label,rate,amount,grandTotal:Math.round((preTax+amount)*100)/100,
+    note:province?label+" at "+(rate*100).toFixed(0)+"% for "+PROVINCES[province]+".":"Select a client province or territory to calculate GST/HST."};
+}
+function workbookTaxMeta(rows){
+  const found={province:"",taxMode:""};
+  rows.forEach(r=>{
+    const cells=r.map(v=>String(v==null?"":v).trim());
+    const rowText=cells.join(" | ");
+    if(/province|territor|gst|hst|tax\s+(?:summary|treatment|status)/i.test(rowText)){
+      found.province=found.province||cells.map(provinceCode).find(Boolean)||provinceInText(rowText);
+      if(/not registered|no (?:gst\/hst|gst|hst|tax) charged|do not charge/i.test(rowText)) found.taxMode="not_registered";
+      else if(/(?:charge|gst|hst|tax\s+(?:summary|treatment|status)).*(?:5|13|14|15)(?:\.0+)?\s*%/i.test(rowText)||/charge gst\/hst/i.test(rowText)) found.taxMode="charge";
+    }
+  });
+  return found;
+}
 
 /* ---------- upload ---------- */
 const drop=$("drop"), file=$("file");
@@ -398,15 +509,17 @@ async function read(f){
     log("File selected: "+f.name+"  ("+f.size+" bytes)");
     const ab=await f.arrayBuffer();
     log("Loaded into memory: "+ab.byteLength+" bytes");
-    const sheets=await XLSXLite.read(ab,["Client Quote"]);
+    const sheets=await XLSXLite.read(ab,["Client Quote","Quote Calculator"]);
     log("Tabs found: "+(sheets.__tabs||[]).join(" | "));
     const rows=sheets["Client Quote"];
+    const taxRows=sheets["Quote Calculator"]||[];
     log("Client Quote rows: "+(rows?rows.length:"none"));
+    log("Quote Calculator rows: "+taxRows.length);
     if(!rows){
       msg.innerHTML='<div class="flag bad">No <strong>Client Quote</strong> tab in that workbook.<br>Tabs found: '+esc((sheets.__tabs||[]).join(", "))+'</div>';
       return;
     }
-    parse(rows,f.name);
+    parse(rows,f.name,taxRows);
   }catch(err){
     log("ERROR in read(): "+(err&&err.stack||err));
     msg.innerHTML='<div class="flag bad"><strong>Could not read that file.</strong><br>'+esc(err.message||String(err))
@@ -414,22 +527,36 @@ async function read(f){
   }
 }
 
-function parse(rows,name){
-  const meta={},lines=[];let total=0,terms=[],five=false;
+function parse(rows,name,taxRows=[]){
+  const meta={},lines=[];let total=0,fallbackTotal=0,hasSubtotal=false,terms=[],five=false;
   rows.forEach(r=>{
     const a=(r[0]==null?"":String(r[0])).trim(), b=r[1], c=r[2], d=r[3];
     if(a==="Prepared for") meta.client=b;
-    else if(a==="Date") meta.date=b;
+    else if(/^Date(?: issued)?$/i.test(a)) meta.date=b;
     else if(a==="Prepared by") meta.preparer=b;
     else if(a.charAt(0)==="\u2022") terms.push(a.replace(/^\u2022\s*/,""));
-    else if((c==null?"":String(c)).trim()==="Total investment") total=(r[4]!=null?r[4]:d);
+    else if(/^(?:Pre-tax subtotal|Subtotal)$/i.test((c==null?"":String(c)).trim())){
+      total=Number(r[4]!=null?r[4]:d)||0;
+      hasSubtotal=true;
+    }
+    else if(/^Total investment$/i.test((c==null?"":String(c)).trim())){
+      fallbackTotal=Number(r[4]!=null?r[4]:d)||0;
+    }
     else if(a==="Phase"){ five = (String(r[4]||"").trim()!==""); }
-    else if(a && b && (d!=null||r[4]!=null)){
+    else if(a && b && (d!=null||r[4]!=null)&&!/^(?:(?:client\s+)?(?:province|territory)|gst\/hst|tax\s+(?:summary|treatment|status))/i.test(a)){
       const list=d, net=five?r[4]:d;
       if(net==null) return;
       lines.push({phase:a,delivers:b,duration:c,list:Number(list||0),amount:Number(net||0)});
     }
   });
+  if(!hasSubtotal) total=fallbackTotal;
+  // Formula cells in an .xlsx can carry a stale or missing cached result. The
+  // selected investment lines are the source of truth the user can verify here.
+  const lineTotal=lines.reduce((sum,l)=>sum+Number(l.amount||0),0);
+  if(Math.abs(Number(total||0)-lineTotal)>0.009)
+    log("Workbook cached subtotal "+Number(total||0)+" replaced with line-item subtotal "+lineTotal);
+  total=lineTotal;
+  Object.assign(meta,workbookTaxMeta(rows.concat(taxRows)));
   if(!lines.length){
     $("parseMsg").innerHTML='<div class="flag bad">The Client Quote tab was found but no phases were in it. On the <strong>Quote Calculator</strong> tab, set the phases you are quoting to <strong>Yes</strong>, save the workbook, and load it again.</div>';
     return;
@@ -444,7 +571,11 @@ function parse(rows,name){
   $("expiry").value=daysFromToday(30);
   $("preparer").value=meta.preparer||"Alexander Ryerson";
   $("ref").value="RY-"+issued.replace(/-/g,"")+"-"+Math.random().toString(36).slice(2,6).toUpperCase();
-  renderLines(); runChecks(); autofill();
+  $("province").value=meta.province||"";
+  const parsedMode=meta.taxMode||"not_registered";
+  const taxRadio=document.querySelector('input[name="taxMode"][value="'+parsedMode+'"]');
+  if(taxRadio) taxRadio.checked=true;
+  renderLines(); updateTaxSummary(); runChecks(); autofill();
   $("parseMsg").innerHTML='<div class="flag ok">Read <strong>'+lines.length+'</strong> phases from <strong class="filename">'+esc(name)+'</strong>.</div>';
   $("stage2").classList.remove("hide");
   $("stage2").scrollIntoView({behavior:"smooth"});
@@ -461,12 +592,13 @@ function renderLines(){
     const w=Number(l.list||0)>Number(l.amount||0);
     h+='<tr><td class="phase-cell"><strong>'+esc(l.phase)+'</strong><div class="note">'+esc(l.delivers||"")+'</div></td>'
      +'<td class="duration-cell" data-label="Duration"><span class="cell-value">'+esc(l.duration||"")+'</span></td>'
-     +(D?'<td class="money-cell sales-cost-cell" data-label="Sales cost"><span class="cell-value">'+money(l.list)+'</span></td>':'')
-     +'<td class="money-cell investment-cell" data-label="Investment"><span class="cell-value"><span>'+money(l.amount)+'</span>'
-     +(w&&Number(l.amount)===0?'<span class="pill">waived</span>':'')+'</span></td></tr>';});
+     +(D?'<td class="money-cell sales-cost-cell" data-label="Sales cost"><span class="cell-value financial-value">'+money(l.list)+'</span></td>':'')
+     +'<td class="money-cell investment-cell" data-label="Investment"><span class="cell-value investment-value">'
+     +(w&&Number(l.amount)===0?'<span class="pill">waived</span>':'')
+     +'<span class="financial-value">'+money(l.amount)+'</span></span></td></tr>';});
   const sav=DATA.lines.reduce((a,l)=>a+Math.max(0,Number(l.list||0)-Number(l.amount||0)),0);
   if(D) h+='<tr class="saving-row"><td class="phase-cell">Total saving</td><td></td><td></td><td class="money-cell investment-cell" style="color:var(--forest);font-weight:700">'+money(sav)+'</td></tr>';
-  h+='<tr class="total"><td class="phase-cell">Total investment</td><td></td>'+(D?'<td></td>':'')+'<td class="money-cell investment-cell">'+money(DATA.total)+'</td></tr></table>';
+  h+='<tr class="total"><td class="phase-cell">Pre-tax subtotal</td><td></td>'+(D?'<td></td>':'')+'<td class="money-cell investment-cell">'+money(DATA.total)+'</td></tr></table>';
   $("lineWrap").innerHTML=h;
 }
 
@@ -493,14 +625,39 @@ $("client").addEventListener("input",()=>{
   runChecks();
   autofill();
 });
+$("province").addEventListener("change",()=>{updateTaxSummary();if(DATA)runChecks();});
+document.querySelectorAll('input[name="taxMode"]').forEach(el=>el.addEventListener("change",()=>{
+  updateTaxSummary();if(DATA)runChecks();
+}));
+
+function updateTaxSummary(){
+  const mode=selectedTaxMode(), province=$("province").value;
+  const t=taxDetails(DATA?DATA.total:0,mode,province);
+  const el=$("taxSummary");
+  if(mode!=="charge"){
+    el.classList.remove("bad");
+    el.textContent=NO_TAX_NOTE;
+    return;
+  }
+  if(!province){
+    el.classList.add("bad");
+    el.textContent="Select a client province or territory before charging GST/HST.";
+    return;
+  }
+  el.classList.remove("bad");
+  el.innerHTML='<strong>'+esc(PROVINCES[province])+': '+esc(t.label)+' '+(t.rate*100).toFixed(0)+'%</strong><br>'+
+    'Pre-tax subtotal '+money(DATA?DATA.total:0)+' + tax '+money(t.amount)+' = grand total '+money(t.grandTotal)+'.';
+}
 
 function runChecks(){
   const out=[];const sum=DATA.lines.reduce((a,l)=>a+Number(l.amount||0),0);
   const c=$("client").value.trim();
   if(!c||/illustrative|replace|client name|example/i.test(c))
     out.push(['bad','The <strong>Prepared for</strong> field still reads "'+esc(c||"blank")+'". Fix it before generating, or the quote goes out with a placeholder client name.']);
-  if(Math.abs(sum-Number(DATA.total||0))>1)
+  if(Math.abs(sum-Number(DATA.total||0))>.009)
     out.push(['bad','Line items total '+money(sum)+' but the workbook total says '+money(DATA.total)+'. Check the workbook before sending.']);
+  if(selectedTaxMode()==="charge"&&!$("province").value)
+    out.push(['bad','Select the client province or territory before charging GST/HST.']);
   if(!DATA.lines.length) out.push(['bad','No phases were selected in the workbook.']);
   if(DATA.total>0 && DATA.lines.length && !out.length) out.push(['ok','Totals reconcile and every field is populated.']);
   $("checks").innerHTML=out.map(o=>'<div class="flag '+o[0]+'">'+o[1]+'</div>').join("");
@@ -531,20 +688,40 @@ async function keyFrom(email,salt){
 const b64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf)));
 
 function buildPayload(){
+  const province=$("province").value;
+  const tax=taxDetails(DATA.total,selectedTaxMode(),province);
   return {
     ref:$("ref").value, client:$("client").value, date:$("qdate").value,
     preparer:$("preparer").value, cover:$("cover").value,
     expiry:$("expiry").value||null,
-    lines:DATA.lines, total:DATA.total, terms:DATA.terms
+    province,provinceName:PROVINCES[province]||"",tax,
+    lines:DATA.lines,total:Number(DATA.total),subtotal:Number(DATA.total),terms:DATA.terms
   };
+}
+
+function readyForOutput(needsUnlockAddress){
+  if(!$("client").value.trim()){
+    $("genMsg").innerHTML='<span style="color:var(--risk)">Enter the client name. No file was created and no email was sent.</span>';
+    return false;
+  }
+  if(selectedTaxMode()==="charge"&&!$("province").value){
+    $("genMsg").innerHTML='<span style="color:var(--risk)">Select the client province or territory before charging GST/HST. No file was created and no email was sent.</span>';
+    $("province").focus();
+    return false;
+  }
+  if(needsUnlockAddress&&!$("email").value.trim()&&!$("email2").value.trim()){
+    $("genMsg").innerHTML='<span style="color:var(--risk)">Enter at least one unlock email address. It is used locally as an encryption key; this page does not send mail.</span>';
+    $("email").focus();
+    return false;
+  }
+  return true;
 }
 
 $("gen").onclick=async()=>{ try{
   const e1=$("email").value.trim(), e2=$("email2").value.trim();
-  if(!e1){$("genMsg").innerHTML='<span style="color:var(--risk)">Enter at least one recipient email.</span>';return;}
-  if(!$("client").value.trim()){$("genMsg").innerHTML='<span style="color:var(--risk)">Enter the client name.</span>';return;}
-  $("gen").disabled=true; $("genMsg").textContent="Encrypting...";
-  log("Generate clicked. Recipients: "+[e1,e2].filter(Boolean).length);
+  if(!readyForOutput(true))return;
+  $("gen").disabled=true; $("genMsg").textContent="Encrypting locally; no email is being sent...";
+  log("Generate clicked. Unlock addresses: "+[e1,e2].filter(Boolean).length);
   const payload=JSON.stringify(buildPayload());
   const blocks=[];
   for(const em of [e1,e2].filter(Boolean)){
@@ -559,15 +736,15 @@ $("gen").onclick=async()=>{ try{
   log("Built output HTML: "+html.length+" chars");
   const shared=await dl(html,name);
   $("gen").disabled=false;
-  $("genMsg").innerHTML='<span style="color:var(--forest)">Generated <strong>'+esc(name)+'</strong>. '
-    +(shared?'Sent to the share sheet.':'Saved to your downloads.')
-    +' Tell the recipient which address unlocks it.</span>';
+  $("genMsg").innerHTML='<span style="color:var(--forest)">Generated <strong>'+esc(name)+'</strong>. <strong>No email was sent by this page.</strong> '
+    +(shared?'The file was passed to your share sheet.':'The file was saved to your downloads.')
+    +' Share it yourself and tell the recipient which address unlocks it.</span>';
   }catch(err){ log("ERROR in generate: "+(err&&err.stack||err)); $("gen").disabled=false;
-    $("genMsg").innerHTML='<span style="color:var(--risk)">Generation failed: '+esc(err.message||String(err))+'. Open Technical details below.</span>'; }
+    $("genMsg").innerHTML='<span style="color:var(--risk)">Generation failed; no encrypted file was created and no email was sent. '+esc(err.message||String(err))+'. Open Technical details below.</span>'; }
 };
 
 $("pdf").onclick=()=>{
-  if(!$("client").value.trim()){$("genMsg").innerHTML='<span style="color:var(--risk)">Enter the client name.</span>';return;}
+  if(!readyForOutput(false))return;
   const p=buildPayload();
   log("PDF requested");
   const w=window.open("","_blank");
@@ -580,7 +757,7 @@ $("pdf").onclick=()=>{
 };
 
 $("preview").onclick=()=>{
-  if(!$("client").value.trim()){$("genMsg").innerHTML='<span style="color:var(--risk)">Enter the client name.</span>';return;}
+  if(!readyForOutput(false))return;
   const p=buildPayload();
   const w=window.open("","_blank");
   if(!w){$("genMsg").innerHTML='<span style="color:var(--risk)">Your browser blocked the preview. Allow pop-ups and try again.</span>';return;}
@@ -636,13 +813,26 @@ td{padding:11px 10px;border-bottom:1px solid #eef2f1;vertical-align:top;font-siz
 .ph{font-weight:700;color:var(--navy)}
 .dl{color:var(--slate);font-size:12px;margin-top:3px}
 .du{white-space:nowrap;color:var(--slate)}
-.am{text-align:right;white-space:nowrap}
+.am{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .sales-cost{color:var(--slate);text-decoration:none!important}
-tfoot td{font-weight:700;color:var(--navy);font-size:15px;border-top:2px solid var(--navy);background:var(--mist)}
+.financial-value{display:inline-block;white-space:nowrap;font-variant-numeric:tabular-nums}
+.investment-value{display:inline-flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:nowrap;
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.waived{display:inline-block;background:var(--mist);color:var(--forest);border:1px solid var(--forest);
+  border-radius:10px;padding:2px 7px;font-size:8.5px;line-height:1.35;letter-spacing:.6px;
+  text-transform:uppercase;font-weight:700;white-space:nowrap;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+tfoot td{font-weight:700;color:var(--navy);font-size:13px;border-top:0;background:var(--mist);padding-top:7px;padding-bottom:7px}
+tfoot tr:first-child td{border-top:2px solid var(--navy)}
+tfoot tr.grand-row td{font-size:15px;border-top:1px solid #c8d6d1}
+.tax-note{font-size:11.5px;color:var(--slate);margin:8px 0 0;overflow-wrap:anywhere}
 h2{font-size:11.5px;letter-spacing:1.4px;color:var(--forest);margin:26px 0 8px}
 ul{margin:0;padding-left:18px} li{font-size:12.5px;margin-bottom:6px}
 .exp{font-size:12.5px;color:var(--slate);margin-top:16px;font-style:italic}
-.qfoot{margin-top:30px;padding-top:11px;border-top:1px solid #e3e9e7;font-size:10px;letter-spacing:1.4px;color:var(--slate);text-align:center}
+.qfoot{margin-top:30px;padding-top:11px;border-top:1px solid #e3e9e7;font-size:10px;letter-spacing:1.4px;
+  color:var(--slate);display:flex;justify-content:center;flex-wrap:wrap;gap:4px 10px;text-align:center}
+.qfoot span{min-width:0;overflow-wrap:anywhere}
+.qfoot span+span::before{content:"|";margin-right:10px;color:var(--steel)}
 @media(max-width:600px){
   .q{padding:24px 16px}.qhead{gap:9px}.qhead img{width:38px;flex-basis:38px}.qwm{font-size:15px}.qref{font-size:8.5px}
   h1{font-size:21px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
@@ -655,12 +845,17 @@ ul{margin:0;padding-left:18px} li{font-size:12.5px;margin-bottom:6px}
   .pricing-table tbody td[data-label]{grid-column:1/-1;display:flex;justify-content:space-between;
     gap:12px;text-align:right;white-space:normal}
   .pricing-table tbody td[data-label]::before{content:attr(data-label);color:var(--slate);font-size:9px;
-    font-weight:700;letter-spacing:.8px;text-transform:uppercase;text-align:left}
+    font-weight:700;letter-spacing:.8px;text-transform:uppercase;text-align:left;flex:1 1 auto;min-width:0}
+  .pricing-table tbody td[data-label]>.financial-value,
+  .pricing-table tbody td[data-label]>.investment-value{flex:0 0 auto;margin-left:auto}
   .pricing-table tfoot tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;
-    padding:10px;background:var(--mist);border-top:2px solid var(--navy)}
+    padding:7px 10px;background:var(--mist);border-top:0}
+  .pricing-table tfoot tr:first-child{border-top:2px solid var(--navy)}
+  .pricing-table tfoot tr.grand-row{border-top:1px solid #c8d6d1}
   .pricing-table tfoot td{display:none;border:0;background:transparent;padding:0;min-width:0}
-  .pricing-table tfoot td:first-child{display:block;grid-column:1;font-size:13px}
+  .pricing-table tfoot td:first-child{display:block;grid-column:1;font-size:12px}
   .pricing-table tfoot td:last-child{display:block;grid-column:2;font-size:13px;text-align:right;white-space:nowrap}
+  .pricing-table tfoot tr.grand-row td{font-size:13px}
   .dl{font-size:11px}.du{white-space:normal}.am{font-size:12px}
 }
 @media(max-width:380px){
@@ -670,12 +865,28 @@ ul{margin:0;padding-left:18px} li{font-size:12.5px;margin-bottom:6px}
 </style>`;
 
 /* ---------- quote body, shared by preview and output ---------- */
+function payloadTax(p){
+  const subtotal=Number(p.subtotal!=null?p.subtotal:p.total||0);
+  const tax=p.tax||{mode:"not_registered",label:"HST",rate:0,amount:0,grandTotal:subtotal,note:NO_TAX_NOTE};
+  return {subtotal,tax:{...tax,amount:Number(tax.amount||0),grandTotal:Number(tax.grandTotal!=null?tax.grandTotal:subtotal),
+    note:tax.note||(tax.mode==="charge"?"GST/HST charged.":NO_TAX_NOTE)}};
+}
+function quoteTotals(p,D){
+  const x=payloadTax(p), span=D?3:2, t=x.tax;
+  return '<tfoot><tr><td colspan="'+span+'">Pre-tax subtotal</td><td class="am">'+money(x.subtotal)+'</td></tr>'
+    +'<tr><td colspan="'+span+'">'+(t.mode==="charge"?esc(t.label)+' ('+(Number(t.rate||0)*100).toFixed(0)+'%)':'GST/HST (not charged)')+'</td><td class="am">'+money(t.amount)+'</td></tr>'
+    +'<tr class="grand-row"><td colspan="'+span+'">Grand total</td><td class="am">'+money(t.grandTotal)+'</td></tr></tfoot>';
+}
 function quoteBody(p){
   const D=p.lines.some(l=>Number(l.list||0)>Number(l.amount||0));
-  let rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td>'
+  let rows=p.lines.map(l=>{
+    const waived=Number(l.list||0)>Number(l.amount||0)&&Number(l.amount||0)===0;
+    return '<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td>'
     +'<td class="du" data-label="Duration">'+esc(l.duration||"")+'</td>'
-    +(D?'<td class="am sales-cost" data-label="Sales cost">'+money(l.list)+'</td>':'')
-    +'<td class="am" data-label="Investment">'+money(l.amount)+'</td></tr>').join("");
+    +(D?'<td class="am sales-cost" data-label="Sales cost"><span class="financial-value">'+money(l.list)+'</span></td>':'')
+    +'<td class="am" data-label="Investment"><span class="investment-value">'
+    +(waived?'<span class="waived">waived</span>':'')
+    +'<span class="financial-value">'+money(l.amount)+'</span></span></td></tr>';}).join("");
   return `
 <div class="q">
   <div class="qhead">
@@ -692,10 +903,11 @@ function quoteBody(p){
   ${p.cover?'<p class="cover">'+esc(p.cover)+'</p>':''}
   <table class="pricing-table ${D?'has-sales':''}"><thead><tr><th>Phase</th><th>Duration</th>${D?'<th class="am">Sales cost</th>':''}<th class="am">Investment</th></tr></thead>
   <tbody>${rows}</tbody>
-  <tfoot><tr><td>Total investment</td><td></td>${D?'<td></td>':''}<td class="am">${money(p.total)}</td></tr></tfoot></table>
+  ${quoteTotals(p,D)}</table>
+  <p class="tax-note">${esc(payloadTax(p).tax.note)}</p>
   <h2>Terms</h2><ul>${p.terms.map(t=>'<li>'+esc(t)+'</li>').join("")}</ul>
   ${p.expiry?'<p class="exp">This quote is valid until '+esc(p.expiry)+'.</p>':''}
-  <div class="qfoot">SYSTEMS &nbsp;|&nbsp; CAPACITY &nbsp;|&nbsp; TRUST &nbsp;|&nbsp; VALUE</div>
+  <div class="qfoot"><span>SYSTEMS</span><span>CAPACITY</span><span>TRUST</span><span>VALUE</span></div>
 </div>`;
 }
 
@@ -746,16 +958,28 @@ td{padding:12px 11px;border-bottom:1px solid #eef2f1;vertical-align:top;font-siz
 .ph{font-weight:700;color:var(--navy)}
 .dl{color:var(--slate);font-size:12.5px;margin-top:3px}
 .du{white-space:nowrap;color:var(--slate)}
-.am{text-align:right;white-space:nowrap}
+.am{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .sales-cost{color:var(--slate);text-decoration:none!important}
-tfoot td{font-weight:700;color:var(--navy);font-size:15px;border-top:2px solid var(--navy);
-border-bottom:0;background:var(--mist)}
+.financial-value{display:inline-block;white-space:nowrap;font-variant-numeric:tabular-nums}
+.investment-value{display:inline-flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:nowrap;
+white-space:nowrap;font-variant-numeric:tabular-nums}
+.waived{display:inline-block;background:var(--mist);color:var(--forest);border:1px solid var(--forest);
+border-radius:10px;padding:2px 7px;font-size:8.5px;line-height:1.35;letter-spacing:.6px;
+text-transform:uppercase;font-weight:700;white-space:nowrap;
+-webkit-print-color-adjust:exact;print-color-adjust:exact}
+tfoot td{font-weight:700;color:var(--navy);font-size:13px;border-top:0;border-bottom:0;
+background:var(--mist);padding-top:7px;padding-bottom:7px}
+tfoot tr:first-child td{border-top:2px solid var(--navy)}
+tfoot tr.grand-row td{font-size:15px;border-top:1px solid #c8d6d1}
+.tax-note{font-size:11.5px;color:var(--slate);margin:8px 0 0;overflow-wrap:anywhere}
 h2{font-size:12px;letter-spacing:1.4px;color:var(--forest);margin:30px 0 8px}
 ul{margin:0;padding-left:18px}
 li{font-size:12.5px;color:var(--carbon);margin-bottom:6px}
 .exp{font-size:12.5px;color:var(--slate);margin-top:18px;font-style:italic}
 .qfoot{margin-top:34px;padding-top:12px;border-top:1px solid #e3e9e7;font-size:10px;
-letter-spacing:1.4px;color:var(--slate);text-align:center}
+letter-spacing:1.4px;color:var(--slate);display:flex;justify-content:center;flex-wrap:wrap;gap:4px 10px;text-align:center}
+.qfoot span{min-width:0;overflow-wrap:anywhere}
+.qfoot span+span::before{content:"|";margin-right:10px;color:var(--steel)}
 @media(max-width:600px){
   .gate{padding:16px}.gbox{padding:24px 20px}
   .q{padding:24px 16px}.qhead{gap:9px}.qhead img{width:38px;flex-basis:38px}.qwm{font-size:15px}.qref{font-size:8.5px}
@@ -769,12 +993,17 @@ letter-spacing:1.4px;color:var(--slate);text-align:center}
   .pricing-table tbody td[data-label]{grid-column:1/-1;display:flex;justify-content:space-between;
     gap:12px;text-align:right;white-space:normal}
   .pricing-table tbody td[data-label]::before{content:attr(data-label);color:var(--slate);font-size:9px;
-    font-weight:700;letter-spacing:.8px;text-transform:uppercase;text-align:left}
+    font-weight:700;letter-spacing:.8px;text-transform:uppercase;text-align:left;flex:1 1 auto;min-width:0}
+  .pricing-table tbody td[data-label]>.financial-value,
+  .pricing-table tbody td[data-label]>.investment-value{flex:0 0 auto;margin-left:auto}
   .pricing-table tfoot tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;
-    padding:10px;background:var(--mist);border-top:2px solid var(--navy)}
+    padding:7px 10px;background:var(--mist);border-top:0}
+  .pricing-table tfoot tr:first-child{border-top:2px solid var(--navy)}
+  .pricing-table tfoot tr.grand-row{border-top:1px solid #c8d6d1}
   .pricing-table tfoot td{display:none;border:0;background:transparent;padding:0;min-width:0}
-  .pricing-table tfoot td:first-child{display:block;grid-column:1;font-size:13px}
+  .pricing-table tfoot td:first-child{display:block;grid-column:1;font-size:12px}
   .pricing-table tfoot td:last-child{display:block;grid-column:2;font-size:13px;text-align:right;white-space:nowrap}
+  .pricing-table tfoot tr.grand-row td{font-size:13px}
   .dl{font-size:11px}.du{white-space:normal}.am{font-size:12px}
 }
 @media(max-width:380px){
@@ -792,10 +1021,10 @@ letter-spacing:1.4px;color:var(--slate);text-align:center}
     <img src="data:image/png;base64,${EMBLEM}" alt="">
     <div class="gwm">RYERSON</div><div class="gds">AI OPERATIONS &amp; ECONOMICS</div>
     <h1>Proposed engagement for ${esc(client)}</h1>
-    <p>${note?esc(note)+"<br><br>":""}Enter the email address this quote was prepared for.</p>
+    <p>${note?esc(note)+"<br><br>":""}Enter the unlock email address shared by the sender. It is checked locally in your browser and is never submitted or used to send mail.</p>
     <input type="email" id="em" placeholder="name@company.com" autocomplete="off">
     <button id="go">Open the quote</button>
-    <div class="err" id="er">That address does not match. Check with the sender.</div>
+    <div class="err" id="er">That unlock address did not match. It was checked locally and was not submitted. Check with the sender.</div>
   </div>
 </div>
 <div id="out"></div>
@@ -812,10 +1041,22 @@ function localISODate(d=new Date()){
   return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
 }
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-const money=n=>"$"+Number(n||0).toLocaleString("en-CA",{maximumFractionDigits:0});
+const money=n=>"$"+Number(n||0).toLocaleString("en-CA",{minimumFractionDigits:2,maximumFractionDigits:2});
+const NO_TAX_NOTE="Not registered for GST/HST; no HST charged.";
+function taxData(p){
+  const subtotal=Number(p.subtotal!=null?p.subtotal:p.total||0);
+  const tax=p.tax||{mode:"not_registered",label:"HST",rate:0,amount:0,grandTotal:subtotal,note:NO_TAX_NOTE};
+  return {subtotal,tax:{mode:tax.mode||"not_registered",label:tax.label||"HST",rate:Number(tax.rate||0),
+    amount:Number(tax.amount||0),grandTotal:Number(tax.grandTotal!=null?tax.grandTotal:subtotal),
+    note:tax.note||(tax.mode==="charge"?"GST/HST charged.":NO_TAX_NOTE)}};
+}
 async function tryOpen(){
   const em=document.getElementById("em").value.trim().toLowerCase();
-  if(!em)return;
+  if(!em){
+    const er=document.getElementById("er");
+    er.textContent="Enter the unlock address. It will be checked locally and will not be submitted or used to send mail.";
+    er.style.display="block";return;
+  }
   for(const b of B){
     try{
       const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(em),"PBKDF2",false,["deriveKey"]);
@@ -832,14 +1073,23 @@ async function tryOpen(){
       return;
     }catch(e){}
   }
+  document.getElementById("er").textContent="That unlock address did not match. It was checked locally and was not submitted. Check with the sender.";
   document.getElementById("er").style.display="block";
 }
 function render(p){
   const D=p.lines.some(l=>Number(l.list||0)>Number(l.amount||0));
-  const rows=p.lines.map(l=>'<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td>'
+  const x=taxData(p), span=D?3:2, t=x.tax;
+  const rows=p.lines.map(l=>{
+    const waived=Number(l.list||0)>Number(l.amount||0)&&Number(l.amount||0)===0;
+    return '<tr><td><div class="ph">'+esc(l.phase)+'</div><div class="dl">'+esc(l.delivers||"")+'</div></td>'
     +'<td class="du" data-label="Duration">'+esc(l.duration||"")+'</td>'
-    +(D?'<td class="am sales-cost" data-label="Sales cost">'+money(l.list)+'</td>':'')
-    +'<td class="am" data-label="Investment">'+money(l.amount)+'</td></tr>').join("");
+    +(D?'<td class="am sales-cost" data-label="Sales cost"><span class="financial-value">'+money(l.list)+'</span></td>':'')
+    +'<td class="am" data-label="Investment"><span class="investment-value">'
+    +(waived?'<span class="waived">waived</span>':'')
+    +'<span class="financial-value">'+money(l.amount)+'</span></span></td></tr>';}).join("");
+  const totals='<tfoot><tr><td colspan="'+span+'">Pre-tax subtotal</td><td class="am">'+money(x.subtotal)+'</td></tr>'
+    +'<tr><td colspan="'+span+'">'+(t.mode==="charge"?esc(t.label)+' ('+(t.rate*100).toFixed(0)+'%)':'GST/HST (not charged)')+'</td><td class="am">'+money(t.amount)+'</td></tr>'
+    +'<tr class="grand-row"><td colspan="'+span+'">Grand total</td><td class="am">'+money(t.grandTotal)+'</td></tr></tfoot>';
   return '<div class="q"><div class="qhead"><img src="data:image/png;base64,${EMBLEM}" alt="">'
    +'<div><div class="qwm">RYERSON</div><div class="qds">AI OPERATIONS &amp; ECONOMICS</div></div>'
    +'<div class="qref">'+esc(p.ref)+'</div></div>'
@@ -850,11 +1100,10 @@ function render(p){
    +(p.cover?'<p class="cover">'+esc(p.cover)+'</p>':'')
    +'<table class="pricing-table '+(D?'has-sales':'')+'"><thead><tr><th>PHASE</th><th>DURATION</th>'
    +(D?'<th class="am">SALES COST</th>':'')+'<th class="am">INVESTMENT</th></tr></thead><tbody>'
-   +rows+'</tbody><tfoot><tr><td>Total investment</td><td></td>'+(D?'<td></td>':'')
-   +'<td class="am">'+money(p.total)+'</td></tr></tfoot></table>'
+   +rows+'</tbody>'+totals+'</table><p class="tax-note">'+esc(t.note)+'</p>'
    +'<h2>TERMS</h2><ul>'+p.terms.map(t=>'<li>'+esc(t)+'</li>').join("")+'</ul>'
    +(p.expiry?'<p class="exp">This quote is valid until '+esc(p.expiry)+'.</p>':'')
-   +'<div class="qfoot">SYSTEMS &nbsp;|&nbsp; CAPACITY &nbsp;|&nbsp; TRUST &nbsp;|&nbsp; VALUE</div></div>';
+   +'<div class="qfoot"><span>SYSTEMS</span><span>CAPACITY</span><span>TRUST</span><span>VALUE</span></div></div>';
 }
 document.getElementById("go").onclick=tryOpen;
 document.getElementById("em").addEventListener("keydown",e=>{if(e.key==="Enter")tryOpen()});
